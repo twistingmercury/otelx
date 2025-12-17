@@ -1,0 +1,24 @@
+services:
+    otel-collector:
+        image: otel/opentelemetry-collector-contrib:latest
+        container_name: otel-collector
+        command: ["--config=/etc/otel-collector-config.yaml"]
+        volumes:
+            - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+        ports:
+            - "4317:4317"
+            - "4318:4318"
+    example:
+        build:
+            context: ../..
+            dockerfile: examples/gingonic/Dockerfile
+        container_name: gin-gonic-example
+        ports:
+            - "8080:8080"
+            - "9090:9090"
+        environment:
+            - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+            - OTEL_EXPORTER_OTLP_INSECURE=true
+        depends_on:
+            - otel-collector
+

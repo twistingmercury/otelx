@@ -1,0 +1,89 @@
+# golangci-lint configuration for otelx
+# https://golangci-lint.run/usage/configuration/
+# Compatible with golangci-lint v2.x
+
+version: "2"
+
+run:
+  # Timeout for analysis
+  timeout: 5m
+
+  # Exclude test files from analysis
+  tests: false
+
+formatters:
+  enable:
+    - gofmt         # Check code formatting
+    - goimports     # Check import formatting
+
+  settings:
+    goimports:
+      # Local imports to be placed separately
+      local-prefixes:
+        - github.com/doublej/otelx
+
+linters:
+  # Disable all linters by default
+  default: none
+
+  # Enable specific linters
+  enable:
+    # Default linters (recommended baseline)
+    - errcheck      # Check for unchecked errors
+    - govet         # Reports suspicious constructs
+    - ineffassign   # Detects unused variable assignments
+    - staticcheck   # Go static analysis (includes gosimple)
+    - unused        # Check for unused code
+
+    # Additional recommended linters for production code
+    - misspell      # Find common misspellings
+    - copyloopvar   # Check for pointers to loop variables
+    - nilerr        # Find returning nil after checking err != nil
+    - bodyclose     # Check HTTP response body is closed
+    - durationcheck # Check for bad time.Duration multiplications
+    - errorlint     # Find issues with error wrapping
+    - makezero      # Find slice declarations not initialized with zero length
+    - predeclared   # Find shadowed predeclared identifiers
+
+  settings:
+    errcheck:
+      # Check type assertions
+      check-type-assertions: true
+      # Check assignments with blank identifier
+      check-blank: false
+
+    govet:
+      # Enable all analyzers
+      enable-all: true
+      # Disable specific analyzers if needed
+      disable:
+        - fieldalignment  # Can be noisy, struct layout optimization
+
+    staticcheck:
+      # Use latest staticcheck checks
+      checks: ["all"]
+
+    misspell:
+      locale: US
+
+  exclusions:
+    # Exclude testutil directory from all linters
+    paths:
+      - internal/testutil
+
+issues:
+  # Maximum issues count per one linter (0 = unlimited)
+  max-issues-per-linter: 50
+
+  # Maximum count of issues with the same text (0 = unlimited)
+  max-same-issues: 10
+
+output:
+  # Format: colored-line-number|line-number|json|tab|checkstyle|code-climate
+  formats:
+    text:
+      # Print lines of code with issue
+      print-issued-lines: true
+      # Print linter name in the end of issue text
+      print-linter-name: true
+

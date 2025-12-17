@@ -1,0 +1,10 @@
+.git/
+.github/
+.claude/
+.out/
+*.md
+.gitignore
+.golangci.yaml
+**/*_test.go
+**/testdata/
+.DS_Store
