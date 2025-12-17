@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/twistingmercury/otelx"
-	"github.com/twistingmercury/otelx_examples/gingonic/internal/server"
+	"github.com/twistingmercury/otelx_examples/gingonic/simple/internal/server"
 )
 
 func main() {

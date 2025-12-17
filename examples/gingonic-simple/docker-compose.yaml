@@ -1,4 +1,9 @@
 services:
+    jaeger:
+        image: jaegertracing/all-in-one:latest
+        container_name: jaeger
+        ports:
+            - "16686:16686"
     otel-collector:
         image: otel/opentelemetry-collector-contrib:latest
         container_name: otel-collector
@@ -8,10 +13,21 @@ services:
         ports:
             - "4317:4317"
             - "4318:4318"
+        depends_on:
+            - jaeger
+    prometheus:
+        image: prom/prometheus:latest
+        container_name: prometheus
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+        ports:
+            - "9091:9090"
+        depends_on:
+            - example
     example:
         build:
             context: ../..
-            dockerfile: examples/gingonic/Dockerfile
+            dockerfile: /Dockerfile
         container_name: gin-gonic-example
         ports:
             - "8080:8080"
