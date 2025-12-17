@@ -8,7 +8,7 @@ help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nAvailable targets:\n"} /^[a-zA-Z0-9_-]+:.*##/ { printf "  %-12s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
 local: ## Build locally using workspace
-	 go build -o .out/uuid_api cmd/main/main.go
+	 go build -o .out/gingonic-decorator cmd/main/main.go
 
 run: ## Run locally for dev purposes
 	go run cmd/main/main.go

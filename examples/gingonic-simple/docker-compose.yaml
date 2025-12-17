@@ -27,8 +27,8 @@ services:
     example:
         build:
             context: ../..
-            dockerfile: /Dockerfile
-        container_name: gin-gonic-example
+            dockerfile: examples/gingonic-simple/Dockerfile
+        container_name: gin-gonic-simple
         ports:
             - "8080:8080"
             - "9090:9090"

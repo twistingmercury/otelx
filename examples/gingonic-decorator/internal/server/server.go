@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/twistingmercury/otelx"
 	otelxgin "github.com/twistingmercury/otelx/middleware/gin"
-	"github.com/twistingmercury/otelx_examples/gingonic/simple/internal/handlers"
+	"github.com/twistingmercury/otelx_examples/gingonic/decorator/internal/handlers"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
@@ -27,16 +27,31 @@ func Initialize(engine *gin.Engine, tel *otelx.Telemetry) error {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	handler, err := handlers.NewHandler(tel)
+	// Build the handler chain using the decorator pattern:
+	// Request -> Tracing -> Metrics -> Logging -> GinHandler
+	ginHandler, err := handlers.NewGinHandler()
 	if err != nil {
 		return err
 	}
-	engine.GET("/api/uuid", handler.GetUUID)
+
+	// Wrap with logging (innermost decorator)
+	loggingHandler := handlers.NewLoggingHandler(tel, ginHandler)
+
+	// Wrap with metrics
+	metricsHandler, err := handlers.NewMetricsHandler(tel, loggingHandler)
+	if err != nil {
+		return err
+	}
+
+	// Wrap with tracing (outermost decorator)
+	tracingHandler := handlers.NewTracingHandler(tel, metricsHandler)
+
+	engine.GET("/api/uuid", tracingHandler.GetUUID)
 
 	return nil
 }
 
-// Run starts the HTTP server and blocks until context is cancelled.
+// Run starts the HTTP server and blocks until context is canceled.
 func Run(ctx context.Context, engine *gin.Engine, tel *otelx.Telemetry) error {
 	srv := &http.Server{
 		Addr:              ":8080",
