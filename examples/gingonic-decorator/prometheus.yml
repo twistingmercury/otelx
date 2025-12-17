@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "gin-gonic-example"
+    static_configs:
+      - targets: ["gin-gonic-example:9090"]

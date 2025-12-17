@@ -1,6 +1,7 @@
 # Plan: otelx Standalone Project
 
 ## Overview
+
 Create a new standalone Go project `otelx` at `/Users/doublej/dev/otelx` as the spiritual successor to the deprecated `github.com/twistingmercury/telemetry/v2`.
 
 **Module Path:** `github.com/twistingmercury/otelx`
@@ -10,7 +11,7 @@ Create a new standalone Go project `otelx` at `/Users/doublej/dev/otelx` as the 
 
 ## Project Structure
 
-```
+```text
 /Users/doublej/dev/otelx/
 ├── .github/
 │   └── workflows/
@@ -70,22 +71,22 @@ func (t *Telemetry) Shutdown(ctx context.Context) error
 
 ### Options
 
-| Option | Description |
-|--------|-------------|
-| `WithService(name, version, env)` | **Required** - service identity |
-| `WithLogLevel(level)` | Log level (default: Info) |
-| `WithLogWriter(w)` | Log output (default: os.Stdout) |
-| `WithoutLogging()` | Disable logging |
-| `WithMetrics(port)` | Enable Prometheus on port |
-| `WithMetricsPath(path)` | Metrics path (default: /metrics) |
-| `WithTracing()` | Enable OTLP tracing |
-| `WithTraceSampleRate(rate)` | Sampling rate 0.0-1.0 |
-| `WithTraceExporter(exp)` | Custom exporter |
-| `WithOTLPEndpoint(endpoint)` | Collector endpoint |
-| `WithOTLPInsecure()` | Disable TLS |
-| `WithAllSignals()` | Enable metrics(9090) + tracing |
-| `WithDevelopmentDefaults()` | Debug, pretty, insecure |
-| `WithProductionDefaults()` | Info, JSON, TLS, 10% sampling |
+| Option                            | Description                      |
+| --------------------------------- | -------------------------------- |
+| `WithService(name, version, env)` | **Required** - service identity  |
+| `WithLogLevel(level)`             | Log level (default: Info)        |
+| `WithLogWriter(w)`                | Log output (default: os.Stdout)  |
+| `WithoutLogging()`                | Disable logging                  |
+| `WithMetrics(port)`               | Enable Prometheus on port        |
+| `WithMetricsPath(path)`           | Metrics path (default: /metrics) |
+| `WithTracing()`                   | Enable OTLP tracing              |
+| `WithTraceSampleRate(rate)`       | Sampling rate 0.0-1.0            |
+| `WithTraceExporter(exp)`          | Custom exporter                  |
+| `WithOTLPEndpoint(endpoint)`      | Collector endpoint               |
+| `WithOTLPInsecure()`              | Disable TLS                      |
+| `WithAllSignals()`                | Enable metrics(9090) + tracing   |
+| `WithDevelopmentDefaults()`       | Debug, pretty, insecure          |
+| `WithProductionDefaults()`        | Info, JSON, TLS, 10% sampling    |
 
 ---
 
@@ -110,6 +111,7 @@ require (
 ## Implementation Phases
 
 ### Phase 1: Foundation
+
 1. Create directory: `/Users/doublej/dev/otelx/`
 2. Initialize git repo
 3. `go.mod`, `.gitignore`
@@ -117,34 +119,41 @@ require (
 5. `internal/testutil/testutil.go`
 
 ### Phase 2: Telemetry Signals
+
 6. `logging.go` + `logging_test.go`
 7. `metrics.go` + `metrics_test.go`
 8. `tracing.go` + `tracing_test.go`
 
 ### Phase 3: Main API
+
 9. `options.go` + `options_test.go`
 10. `otelx.go` + `otelx_test.go`
 11. `example_test.go`
 
 ### Phase 4: Build Infrastructure
+
 12. `scripts/print.sh` - shell helper functions
 13. `build/build.sh` - main build script
 14. `Makefile` - build targets
 
 ### Phase 5: Documentation & CI
+
 15. `README.md`, `CHANGELOG.md`, `MIGRATION.md`, `CONTRIBUTING.md`, `LICENSE`
 16. `.golangci.yaml`, `.github/workflows/ci.yaml`, `.github/workflows/release.yaml`
 
 ### Phase 6: Examples
+
 17. `_examples/basic/main.go`
 18. `_examples/development/main.go`
 19. `_examples/production/main.go`
 20. `_examples/custom/main.go`
 
 ### Phase 7: E2E Tests (separate)
+
 21. `tests/` - handled by go-e2e-test-agent
 
 ### Phase 8: Update Old Telemetry Project
+
 22. Update `/Users/doublej/dev/telemetry/MIGRATION.md` to point to otelx
 23. Ensure deprecation notice in telemetry README points to otelx
 
@@ -162,13 +171,13 @@ require (
 
 ## Delegation Plan
 
-| Phase | Agent | Task |
-|-------|-------|------|
-| 1-3 | go-software-agent | Create all Go source files + unit tests |
-| 4 | shell-script-agent | Create `scripts/print.sh`, `build/build.sh` |
-| 4 | shell-script-agent | Create `Makefile` |
-| 5 | documentation-agent | Create README, CHANGELOG, MIGRATION, CONTRIBUTING, LICENSE |
-| 5 | go-devops-agent | Create `.golangci.yaml`, CI/CD workflows |
-| 6 | go-software-agent | Create example applications |
-| 7 | go-e2e-test-agent | Create `tests/` directory with e2e tests |
-| 8 | documentation-agent | Update old telemetry MIGRATION.md |
+| Phase | Agent               | Task                                                       |
+| ----- | ------------------- | ---------------------------------------------------------- |
+| 1-3   | go-software-agent   | Create all Go source files + unit tests                    |
+| 4     | shell-script-agent  | Create `scripts/print.sh`, `build/build.sh`                |
+| 4     | shell-script-agent  | Create `Makefile`                                          |
+| 5     | documentation-agent | Create README, CHANGELOG, MIGRATION, CONTRIBUTING, LICENSE |
+| 5     | go-devops-agent     | Create `.golangci.yaml`, CI/CD workflows                   |
+| 6     | go-software-agent   | Create example applications                                |
+| 7     | go-e2e-test-agent   | Create `tests/` directory with e2e tests                   |
+| 8     | documentation-agent | Update old telemetry MIGRATION.md                          |

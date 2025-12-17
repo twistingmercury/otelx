@@ -197,6 +197,27 @@ import "github.com/twistingmercury/otelx"
 If migrating from `github.com/twistingmercury/telemetry/v2`, see
 [MIGRATION.md](MIGRATION.md) for guidance.
 
+## Known Issues
+
+### Go Standard Library Vulnerabilities
+
+The following vulnerabilities appear in govulncheck but are **not in otelx code**:
+
+- **GO-2025-4175**: Improper DNS name constraint handling in wildcard
+  verification (crypto/x509)
+- **GO-2025-4155**: Excessive resource consumption in certificate validation
+  error strings (crypto/x509)
+
+These are in the Go standard library and are pulled in transitively via
+prometheus/promhttp -> crypto/tls -> crypto/x509.
+
+**Impact**: Minimal for typical otelx usage. Most deployments use plain HTTP for
+Prometheus metrics endpoints and in-cluster OTLP without TLS certificate
+validation concerns.
+
+**Resolution**: Upgrade to Go 1.25.5 or later. Users who enable TLS for metrics
+endpoints or OTLP connections should prioritize this upgrade.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
