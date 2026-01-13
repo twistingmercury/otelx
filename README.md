@@ -192,11 +192,6 @@ Import the module:
 import "github.com/twistingmercury/otelx"
 ```
 
-## Migration
-
-If migrating from `github.com/twistingmercury/telemetry/v2`, see
-[MIGRATION.md](MIGRATION.md) for guidance.
-
 ## Known Issues
 
 ### Go Standard Library Vulnerabilities
