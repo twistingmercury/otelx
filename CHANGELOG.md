@@ -1,5 +1,7 @@
 # Changelog
 
+<!-- markdownlint-disable MD024 -->
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
@@ -7,58 +9,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] - 2025-12-17
+## [1.0.1] - 2026-08-21
 
 ### Added
 
-- Core `otelx` library providing unified OpenTelemetry initialization with a
-  single `Initialize()` function call
-- `Telemetry` struct containing configured Logger, MeterProvider, and
-  TracerProvider components
-- Functional options pattern for flexible configuration:
-  - `WithService()` for required service identity (name, version, environment)
-  - `WithLogLevel()` and `WithLogWriter()` for logging configuration
-  - `WithoutLogging()` to disable logging entirely
-  - `WithMetrics()` and `WithMetricsPath()` for Prometheus metrics
-    configuration
-  - `WithTracing()`, `WithTraceSampleRate()`, and `WithTraceExporter()` for
-    tracing configuration
-  - `WithOTLPEndpoint()` and `WithOTLPInsecure()` for OTLP collector
-    configuration
-  - `WithAllSignals()` convenience option to enable metrics and tracing
-    together
-  - `WithDevelopmentDefaults()` preset for local development
-  - `WithProductionDefaults()` preset for production deployments
-- Structured logging via zerolog with automatic trace correlation through
-  `LoggerWithSpan()` helper
-- Prometheus metrics exposition via HTTP server with configurable port and path
-- Distributed tracing via OTLP gRPC exporter with configurable sampling rates
-- OpenTelemetry resource creation with standard semantic conventions
-  (service.name, service.version, deployment.environment, host.name,
-  process.pid, telemetry.sdk.*)
-- Global OpenTelemetry provider registration for MeterProvider and
-  TracerProvider
-- W3C Trace Context and Baggage propagation for distributed tracing
-- Graceful shutdown handling via `Telemetry.Shutdown()` to flush pending
-  telemetry
-- Convenience methods `Telemetry.Tracer()` and `Telemetry.Meter()` with no-op
-  fallbacks
-- Configuration validation with descriptive error messages
-- Gin web framework middleware package (`middleware/gin`):
-  - `LoggingMiddleware()` for trace-correlated request logging with
-    status-based log levels
-  - `CorrelationMiddleware()` for storing trace-correlated logger without
-    request logging
-  - `Logger()` and `MustLogger()` context helpers for retrieving loggers in
-    handlers
-  - Middleware options: `WithSkipPaths()`, `WithLogLevel()`,
-    `WithRequestHeaders()`, `WithCustomFields()`
-- Two example projects demonstrating otelx integration with Gin:
-  - `gingonic-simple`: Embedded telemetry pattern for quick setup
-  - `gingonic-decorator`: Decorator pattern for separation of concerns
-- Docker Compose configurations for full observability stack (Prometheus,
-  Jaeger, OpenTelemetry Collector)
-- Comprehensive test coverage for core library and middleware
+- Docker-first verification build and GitHub Actions CI workflow
+- Gin decorator-pattern example alongside the simple Gin example
+- License and example documentation
 
-[Unreleased]: https://github.com/twistingmercury/otelx/compare/v1.0.0...HEAD
+### Changed
+
+- Updated the root and example modules to Go 1.26.6
+- Renamed the original Gin example to `gingonic-simple`
+- Stopped tracking the generated `go.work.sum` file
+
+### Fixed
+
+- Addressed static-analysis findings in tests and test utilities
+
+## [1.0.0] - 2025-12-16
+
+### Added
+
+- Core `otelx` library for unified OpenTelemetry initialization with
+  `Initialize()`
+- Configurable zerolog logging, Prometheus metrics, and OTLP gRPC tracing
+- Service identity, signal, OTLP, and development or production configuration
+  options
+- OpenTelemetry resource setup, global provider registration, and W3C Trace
+  Context and Baggage propagation
+- `Telemetry.Shutdown()`, `Telemetry.Tracer()`, and `Telemetry.Meter()`
+  helpers
+- Gin middleware for trace-correlated request logging and context loggers
+- Gin example with a Docker Compose observability stack
+- Core library and middleware test coverage
+
+## [0.0.1] - 2025-11-24
+
+### Added
+
+- Initial project setup
+
+<!-- markdownlint-enable MD024 -->
+
+[Unreleased]: https://github.com/twistingmercury/otelx/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/twistingmercury/otelx/releases/tag/v1.0.1
 [1.0.0]: https://github.com/twistingmercury/otelx/releases/tag/v1.0.0
+[0.0.1]: https://github.com/twistingmercury/otelx/releases/tag/v0.0.1
