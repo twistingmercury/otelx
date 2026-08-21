@@ -132,10 +132,14 @@ func FetchURL(t *testing.T, url string) (string, int) {
 	return string(body), resp.StatusCode
 }
 
-// ContextWithTimeout creates a context with a timeout for testing.
-func ContextWithTimeout(t *testing.T, timeout time.Duration) (context.Context, context.CancelFunc) {
+// ContextWithTimeout creates a context with a timeout for testing and cleans it up when the test ends.
+func ContextWithTimeout(t *testing.T, timeout time.Duration) context.Context {
 	t.Helper()
-	return context.WithTimeout(context.Background(), timeout)
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	t.Cleanup(cancel)
+
+	return ctx
 }
 
 // RequireEventually retries a condition until it succeeds or times out.

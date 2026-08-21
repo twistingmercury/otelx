@@ -192,11 +192,6 @@ Import the module:
 import "github.com/twistingmercury/otelx"
 ```
 
-## Migration
-
-If migrating from `github.com/twistingmercury/telemetry/v2`, see
-[MIGRATION.md](MIGRATION.md) for guidance.
-
 ## Known Issues
 
 ### Go Standard Library Vulnerabilities
@@ -215,7 +210,7 @@ prometheus/promhttp -> crypto/tls -> crypto/x509.
 Prometheus metrics endpoints and in-cluster OTLP without TLS certificate
 validation concerns.
 
-**Resolution**: Upgrade to Go 1.25.5 or later. Users who enable TLS for metrics
+**Resolution**: Upgrade to Go 1.26.6 or later. Users who enable TLS for metrics
 endpoints or OTLP connections should prioritize this upgrade.
 
 ## License

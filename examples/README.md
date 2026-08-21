@@ -20,7 +20,7 @@ Both examples provide:
 
 ## Prerequisites
 
-- Go 1.21+
+- Go 1.26.6+
 - Docker and Docker Compose (for full observability stack)
 
 ## Running an Example

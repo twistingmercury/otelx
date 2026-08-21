@@ -4,7 +4,6 @@
 .out/
 *.md
 .gitignore
-.golangci.yaml
-**/*_test.go
+go.work.sum
 **/testdata/
 .DS_Store

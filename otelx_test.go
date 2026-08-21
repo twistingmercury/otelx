@@ -30,7 +30,9 @@ func TestInitialize_MinimalConfig(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	// Logging is disabled but logger should still exist (nop)
 	tel.Logger.Info().Msg("this should not panic")
@@ -50,7 +52,9 @@ func TestInitialize_WithLogging(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	tel.Logger.Info().Msg("test message")
 
@@ -69,7 +73,9 @@ func TestInitialize_WithMetrics(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	require.NotNil(t, tel.MeterProvider)
 	assert.NotEmpty(t, tel.MetricsURL())
@@ -91,7 +97,9 @@ func TestInitialize_WithTracing(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	require.NotNil(t, tel.TracerProvider)
 
@@ -123,7 +131,9 @@ func TestInitialize_FullStack(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	// All components should be initialized
 	require.NotNil(t, tel.MeterProvider)
@@ -161,7 +171,9 @@ func TestInitialize_AllSignals(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	assert.NotNil(t, tel.MeterProvider)
 	assert.NotNil(t, tel.TracerProvider)
@@ -223,7 +235,9 @@ func TestTelemetry_Config(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	cfg := tel.Config()
 	assert.Equal(t, "config-test", cfg.ServiceName)
@@ -245,7 +259,9 @@ func TestTelemetry_MetricsURL_Disabled(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	assert.Empty(t, tel.MetricsURL())
 }
@@ -309,7 +325,9 @@ func TestTelemetry_Tracer_Disabled(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	// Should return noop tracer
 	tracer := tel.Tracer("test")
@@ -331,7 +349,9 @@ func TestTelemetry_Meter_Disabled(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	// Should return noop meter from global provider
 	meter := tel.Meter("test")

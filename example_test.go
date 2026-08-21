@@ -87,7 +87,9 @@ func Example_development() {
 		fmt.Fprintf(os.Stderr, "failed to initialize telemetry: %v\n", err)
 		return
 	}
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	tel.Logger.Debug().Msg("debug logging is enabled")
 }
@@ -107,7 +109,9 @@ func Example_production() {
 		fmt.Fprintf(os.Stderr, "failed to initialize telemetry: %v\n", err)
 		return
 	}
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	tel.Logger.Info().Msg("production service started")
 }
@@ -124,7 +128,9 @@ func Example_customWriter() {
 		fmt.Fprintf(os.Stderr, "failed to initialize telemetry: %v\n", err)
 		return
 	}
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	tel.Logger.Info().Msg("logging to stderr")
 }
@@ -143,7 +149,9 @@ func ExampleWithAllSignals() {
 		fmt.Fprintf(os.Stderr, "failed to initialize telemetry: %v\n", err)
 		return
 	}
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	// All telemetry components are now available
 	tel.Logger.Info().Msg("all signals enabled")

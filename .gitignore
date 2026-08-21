@@ -1,6 +1,7 @@
 **/bin/
 **/*.env
 **/*.out
+go.work.sum
 _*
 .claude/settings.local.json
 
