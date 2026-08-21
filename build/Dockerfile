@@ -4,7 +4,7 @@ RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /workspace
 
-COPY go.mod go.sum go.work go.work.sum ./
+COPY go.mod go.sum go.work ./
 COPY examples/gingonic-simple/go.mod examples/gingonic-simple/go.sum ./examples/gingonic-simple/
 COPY examples/gingonic-decorator/go.mod examples/gingonic-decorator/go.sum ./examples/gingonic-decorator/
 
