@@ -1,6 +1,6 @@
 module github.com/twistingmercury/otelx_examples/gingonic/decorator
 
-go 1.24.0
+go 1.26.6
 
 require (
 	github.com/gin-gonic/gin v1.11.0
