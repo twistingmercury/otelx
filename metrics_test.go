@@ -31,7 +31,9 @@ func TestMetrics_Integration(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	// Wait for server to start
 	metricsURL := tel.MetricsURL()
@@ -60,7 +62,9 @@ func TestMetrics_CustomPath(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	// Wait for server to start
 	metricsURL := tel.MetricsURL()
@@ -72,7 +76,9 @@ func TestMetrics_CustomPath(t *testing.T) {
 	// Fetch metrics
 	resp, err := http.Get(metricsURL)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -87,7 +93,9 @@ func TestMetrics_Disabled(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	assert.Nil(t, tel.MeterProvider)
 	assert.Empty(t, tel.MetricsURL())
@@ -104,7 +112,9 @@ func TestMetrics_Counter(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	// Wait for server to start
 	ok := testutil.WaitForServer(t, tel.MetricsURL(), 5*time.Second)

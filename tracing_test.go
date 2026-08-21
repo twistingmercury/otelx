@@ -22,8 +22,9 @@ func TestTracing_Disabled(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
-
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 	assert.Nil(t, tel.TracerProvider)
 }
 
@@ -41,7 +42,9 @@ func TestTracing_WithCustomExporter(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	require.NotNil(t, tel.TracerProvider)
 
@@ -85,7 +88,9 @@ func TestTracing_SampleRates(t *testing.T) {
 			)
 			require.NoError(t, err)
 			require.NotNil(t, tel)
-			defer tel.Shutdown(ctx)
+			defer func() {
+				_ = tel.Shutdown(ctx)
+			}()
 
 			require.NotNil(t, tel.TracerProvider)
 		})
@@ -104,7 +109,9 @@ func TestTracing_GlobalProvider(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	// The global tracer provider should be set
 	globalTP := otel.GetTracerProvider()
@@ -128,7 +135,9 @@ func TestTracing_SpanAttributes(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	// Create a span with attributes
 	tracer := tel.TracerProvider.Tracer("test-tracer")
@@ -158,7 +167,9 @@ func TestTracing_NestedSpans(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, tel)
-	defer tel.Shutdown(ctx)
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
 
 	tracer := tel.TracerProvider.Tracer("test-tracer")
 
