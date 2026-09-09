@@ -1,8 +1,17 @@
 # otelx
 
 > **Maturity Level**: Emerging - Initial development, API subject to change
+> **Version**: v1.0.2
 
 A Go library for unified OpenTelemetry initialization with a single function call.
+
+## Table of Contents
+
+- [Usage](#usage)
+- [How it works](#how-it-works)
+- [Key Considerations](#key-considerations)
+- [Development Considerations](#development-considerations)
+- [Versioning](#versioning)
 
 ## Usage
 
@@ -148,6 +157,8 @@ customize each component independently.
 
 ### Quick Start
 
+Requires Go 1.27.1 or later.
+
 ```bash
 go mod tidy
 go build ./...
@@ -161,11 +172,14 @@ Build the library:
 go build ./...
 ```
 
-Run examples from the `_examples/` directory:
+Run the simple Gin example from the repository root:
 
 ```bash
-go run ./_examples/basic
+go run ./examples/gingonic-simple/cmd/main
 ```
+
+See the [examples guide](examples/README.md) for the observability stack and
+decorator example.
 
 ### Testing
 
@@ -191,27 +205,6 @@ Import the module:
 ```go
 import "github.com/twistingmercury/otelx"
 ```
-
-## Known Issues
-
-### Go Standard Library Vulnerabilities
-
-The following vulnerabilities appear in govulncheck but are **not in otelx code**:
-
-- **GO-2025-4175**: Improper DNS name constraint handling in wildcard
-  verification (crypto/x509)
-- **GO-2025-4155**: Excessive resource consumption in certificate validation
-  error strings (crypto/x509)
-
-These are in the Go standard library and are pulled in transitively via
-prometheus/promhttp -> crypto/tls -> crypto/x509.
-
-**Impact**: Minimal for typical otelx usage. Most deployments use plain HTTP for
-Prometheus metrics endpoints and in-cluster OTLP without TLS certificate
-validation concerns.
-
-**Resolution**: Upgrade to Go 1.26.6 or later. Users who enable TLS for metrics
-endpoints or OTLP connections should prioritize this upgrade.
 
 ## License
 

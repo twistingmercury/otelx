@@ -5,7 +5,7 @@ implement the same UUID generation API with full observability, but use
 different architectural patterns for organizing telemetry code.
 
 | Example | Pattern | Best For |
-|---------|---------|----------|
+| --------- | --------- | ---------- |
 | [gingonic-simple](gingonic-simple/) | Embedded telemetry | Quick setup, smaller projects |
 | [gingonic-decorator](gingonic-decorator/) | Decorator chain | Separation of concerns, testability |
 
@@ -20,7 +20,7 @@ Both examples provide:
 
 ## Prerequisites
 
-- Go 1.26.6+
+- Go 1.27.1+
 - Docker and Docker Compose (for full observability stack)
 
 ## Running an Example
@@ -187,7 +187,7 @@ Request --> Logging --> Metrics --> Tracing --> Core Handler --> Response
 ## Pattern Comparison
 
 | Aspect | Simple | Decorator |
-|--------|--------|-----------|
+| -------- | -------- | ----------- |
 | Code organization | Single file, interleaved | Separate concerns |
 | Setup complexity | Low | Higher |
 | Testing | Test all telemetry together | Test each concern independently |
