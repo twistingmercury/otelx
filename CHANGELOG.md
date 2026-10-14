@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   values instead of a hardcoded `otelx` / `1.0.0`
 - `OTEL_RESOURCE_ATTRIBUTES` and `OTEL_SERVICE_NAME` are now read and override
   the values passed to `WithService`
+- Upgraded `golang.org/x/net` to v0.60.0 for GO-2026-6603, GO-2026-6610,
+  GO-2026-6611 and related HTTP/2 advisories
 - Each `Telemetry` now serves metrics from its own Prometheus registry (with Go
   runtime and process collectors) instead of the global default registry
 
