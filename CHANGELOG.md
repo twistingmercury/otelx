@@ -36,6 +36,9 @@ The module path is now `github.com/twistingmercury/otelx/v2`, and
 - The default OTLP exporter no longer overrides `OTEL_EXPORTER_OTLP_*`, and
   the sampler no longer overrides `OTEL_TRACES_SAMPLER`
 - `MetricsAddr` may use port 0; `MetricsURL` reports the bound port
+- Updated the root and example modules to Go 1.27.2, pinned the verify image
+  to `golang-tooling:go1.27.2`, and moved the example Dockerfiles from
+  `golang:1.24-alpine` to `golang:1.27.2-alpine`
 
 ### Changed
 
