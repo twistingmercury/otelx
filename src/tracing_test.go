@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/twistingmercury/otelx/src/v2"
+	otelx "github.com/twistingmercury/otelx/src/v2"
 	"github.com/twistingmercury/otelx/src/v2/internal/testutil"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"

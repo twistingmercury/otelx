@@ -7,8 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/twistingmercury/otelx/src/v2"
 	otelxgin "github.com/twistingmercury/otelx/src/middleware/gin/v2"
+	otelx "github.com/twistingmercury/otelx/src/v2"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"

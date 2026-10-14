@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/twistingmercury/otelx/src/v2"
+	otelx "github.com/twistingmercury/otelx/src/v2"
 	"github.com/twistingmercury/otelx_examples/gingonic/decorator/internal/server"
 )
 

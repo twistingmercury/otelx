@@ -12,7 +12,7 @@
 //
 //	import (
 //	    "github.com/gin-gonic/gin"
-//	    "github.com/twistingmercury/otelx/src/v2"
+//	    otelx "github.com/twistingmercury/otelx/src/v2"
 //	    ginmw "github.com/twistingmercury/otelx/src/middleware/gin/v2"
 //	)
 //

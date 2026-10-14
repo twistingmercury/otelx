@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/twistingmercury/otelx/src/v2"
 	otelxgin "github.com/twistingmercury/otelx/src/middleware/gin/v2"
+	otelx "github.com/twistingmercury/otelx/src/v2"
 )
 
 // loggingHandler is a decorator that adds trace-correlated logging to a Handler.

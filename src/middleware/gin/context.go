@@ -3,7 +3,7 @@ package gin
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
-	"github.com/twistingmercury/otelx/src/v2"
+	otelx "github.com/twistingmercury/otelx/src/v2"
 )
 
 // loggerKey is the key used to store the logger in gin.Context.
