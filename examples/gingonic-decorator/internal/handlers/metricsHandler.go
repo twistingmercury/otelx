@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/twistingmercury/otelx"
+	"github.com/twistingmercury/otelx/v2"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 )
 
@@ -18,7 +19,7 @@ type metricsHandler struct {
 
 // NewMetricsHandler creates a new metrics decorator that wraps an inner Handler.
 func NewMetricsHandler(tel *otelx.Telemetry, inner Handler) (Handler, error) {
-	meter := tel.Meter("uuid-api")
+	meter := otel.Meter("uuid-api")
 
 	uuidCounter, err := meter.Int64Counter("uuid_generated_total",
 		metric.WithDescription("Total number of UUIDs generated"),

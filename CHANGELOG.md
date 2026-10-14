@@ -9,6 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking: v2
+
+The module path is now `github.com/twistingmercury/otelx/v2`, and
+`Initialize` takes a `Config` struct instead of functional options.
+
+| v1 | v2 |
+| --- | --- |
+| `WithService(name, version, env)` | `Config.ServiceName`, `ServiceVersion`, `Environment` (only the name is required, and `OTEL_SERVICE_NAME` can supply it) |
+| `WithLogLevel(zerolog.Level)` | `Config.LogLevel` as a level name, such as `"debug"` |
+| `WithLogWriter(w)` | `Config.LogWriter` |
+| `WithoutLogging()` | `Config.LogLevel: "disabled"` |
+| `WithMetrics(port)` | `Config.MetricsAddr`, such as `":9090"` |
+| `WithMetricsPath(path)` | `Config.MetricsPath` |
+| `WithTracing()` | `Config.Tracing: true` |
+| `WithTraceExporter(e)` | `Config.TraceExporter` |
+| `WithTraceSampleRate(r)` | `OTEL_TRACES_SAMPLER=parentbased_traceidratio` with `OTEL_TRACES_SAMPLER_ARG=r`, or `Config.Sampler` |
+| `WithOTLPEndpoint(e)` | `OTEL_EXPORTER_OTLP_ENDPOINT` |
+| `WithOTLPInsecure()` | `OTEL_EXPORTER_OTLP_INSECURE=true`, or an `http://` endpoint |
+| `WithAllSignals`, `WithDevelopmentDefaults`, `WithProductionDefaults` | Removed; set the fields directly |
+| `tel.Tracer(name)`, `tel.Meter(name)` | `otel.Tracer(name)`, `otel.Meter(name)`, or the provider fields |
+| `tel.Config()` | Removed |
+| `NewDefaultConfig`, `Config.Validate`, `Config.Clone` | Removed |
+| `NewResource`, `MetricsServer`, `LogLevel`, `Default*` constants | Unexported or removed |
+
+- The default OTLP exporter no longer overrides `OTEL_EXPORTER_OTLP_*`, and
+  the sampler no longer overrides `OTEL_TRACES_SAMPLER`
+- `MetricsAddr` may use port 0; `MetricsURL` reports the bound port
+- Updated the root and example modules to Go 1.27.2, pinned the verify image
+  to `golang-tooling:go1.27.2`, and moved the example Dockerfiles from
+  `golang:1.24-alpine` to `golang:1.27.2-alpine`
+
 ### Changed
 
 - `Config.TraceExporter` and `WithTraceExporter` now take an

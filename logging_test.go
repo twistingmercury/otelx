@@ -1,153 +1,62 @@
 package otelx_test
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/twistingmercury/otelx"
-	"github.com/twistingmercury/otelx/internal/testutil"
+	"github.com/twistingmercury/otelx/v2"
+	"github.com/twistingmercury/otelx/v2/internal/testutil"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
-func TestSetupLogging_Disabled(t *testing.T) {
-	cfg := otelx.NewDefaultConfig()
-	cfg.ServiceName = "test-service"
-	cfg.ServiceVersion = "1.0.0"
-	cfg.Environment = "test"
-	cfg.LoggingEnabled = false
-
-	// Access the setup function through Initialize
-	// For now, test LogLevel function directly
-}
-
-func TestLogLevel(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected zerolog.Level
-	}{
-		{"trace", zerolog.TraceLevel},
-		{"debug", zerolog.DebugLevel},
-		{"info", zerolog.InfoLevel},
-		{"warn", zerolog.WarnLevel},
-		{"warning", zerolog.WarnLevel},
-		{"error", zerolog.ErrorLevel},
-		{"fatal", zerolog.FatalLevel},
-		{"panic", zerolog.PanicLevel},
-		{"disabled", zerolog.Disabled},
-		{"none", zerolog.Disabled},
-		{"off", zerolog.Disabled},
-		{"unknown", zerolog.InfoLevel},
-		{"", zerolog.InfoLevel},
-		{"INFO", zerolog.InfoLevel}, // Case sensitive, returns default
+func initLogging(t *testing.T, cfg otelx.Config) (*otelx.Telemetry, *testutil.LogCapture) {
+	t.Helper()
+	capture := testutil.NewLogCapture()
+	if cfg.ServiceName == "" {
+		cfg.ServiceName = "svc"
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			result := otelx.LogLevel(tt.input)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestLogging_JSONOutput(t *testing.T) {
-	var buf bytes.Buffer
-
-	logger := zerolog.New(&buf).With().Timestamp().Logger()
-	logger.Info().Msg("test message")
-
-	var entry map[string]interface{}
-	err := json.Unmarshal(buf.Bytes(), &entry)
+	cfg.LogWriter = capture
+	tel, err := otelx.Initialize(context.Background(), cfg)
 	require.NoError(t, err)
-
-	assert.Equal(t, "info", entry["level"])
-	assert.Equal(t, "test message", entry["message"])
-	assert.NotEmpty(t, entry["time"])
+	t.Cleanup(func() { _ = tel.Shutdown(context.Background()) })
+	return tel, capture
 }
 
-func TestLogging_WithFields(t *testing.T) {
-	var buf bytes.Buffer
+func TestLogging_JSONWithServiceIdentity(t *testing.T) {
+	tel, capture := initLogging(t, otelx.Config{ServiceVersion: "1.2.3", Environment: "test"})
+	tel.Logger.Info().Str("k", "v").Msg("hello")
 
-	logger := zerolog.New(&buf).With().Timestamp().Logger()
-	logger.Info().
-		Str("service", "test-service").
-		Str("version", "1.0.0").
-		Int("count", 42).
-		Msg("structured log")
-
-	var entry map[string]interface{}
-	err := json.Unmarshal(buf.Bytes(), &entry)
+	logs, err := capture.ParseJSONLogs()
 	require.NoError(t, err)
-
-	assert.Equal(t, "info", entry["level"])
-	assert.Equal(t, "structured log", entry["message"])
-	assert.Equal(t, "test-service", entry["service"])
-	assert.Equal(t, "1.0.0", entry["version"])
-	assert.Equal(t, float64(42), entry["count"]) // JSON numbers are float64
+	require.Len(t, logs, 1)
+	assert.Equal(t, "hello", logs[0]["message"])
+	assert.Equal(t, "info", logs[0]["level"])
+	assert.Equal(t, "v", logs[0]["k"])
+	assert.Equal(t, "svc", logs[0]["service"])
+	assert.Equal(t, "1.2.3", logs[0]["version"])
+	assert.Equal(t, "test", logs[0]["environment"])
+	assert.Contains(t, logs[0], "time")
 }
 
-func TestLogging_LevelFiltering(t *testing.T) {
-	var buf bytes.Buffer
-
-	// Set level to Warn - should filter out Info and Debug
-	zerolog.SetGlobalLevel(zerolog.WarnLevel)
-	defer zerolog.SetGlobalLevel(zerolog.TraceLevel) // Reset
-
-	logger := zerolog.New(&buf).With().Timestamp().Logger()
-
-	// These should not be written
-	logger.Debug().Msg("debug message")
-	logger.Info().Msg("info message")
-
-	assert.Empty(t, buf.String())
-
-	// This should be written
-	logger.Warn().Msg("warn message")
-	assert.Contains(t, buf.String(), "warn message")
+func TestLogging_ServiceNameFromEnvironment(t *testing.T) {
+	t.Setenv("OTEL_SERVICE_NAME", "svc-from-env")
+	tel, capture := initLogging(t, otelx.Config{})
+	tel.Logger.Info().Msg("hello")
+	assert.True(t, capture.Contains(`"service":"svc-from-env"`))
 }
 
-func TestLogging_NopLogger(t *testing.T) {
-	var buf bytes.Buffer
-
-	logger := zerolog.Nop()
-	logger.Info().Msg("this should not appear")
-
-	// Write something to buf to verify it's not the logger
-	buf.WriteString("test")
-	assert.Equal(t, "test", buf.String())
-}
-
-func TestLogging_WithError(t *testing.T) {
-	var buf bytes.Buffer
-
-	logger := zerolog.New(&buf).With().Timestamp().Logger()
-	logger.Error().
-		Err(assert.AnError).
-		Msg("operation failed")
-
-	var entry map[string]interface{}
-	err := json.Unmarshal(buf.Bytes(), &entry)
-	require.NoError(t, err)
-
-	assert.Equal(t, "error", entry["level"])
-	assert.Equal(t, "operation failed", entry["message"])
-	assert.Equal(t, "assert.AnError general error for testing", entry["error"])
+func TestLogging_Disabled(t *testing.T) {
+	tel, capture := initLogging(t, otelx.Config{LogLevel: "disabled"})
+	tel.Logger.Error().Msg("dropped")
+	assert.Empty(t, capture.String())
 }
 
 func TestInitialize_DoesNotChangeZerologGlobalLevel(t *testing.T) {
 	before := zerolog.GlobalLevel()
-	capture := testutil.NewLogCapture()
-
-	tel, err := otelx.Initialize(context.Background(),
-		otelx.WithService("test-service", "1.0.0", "test"),
-		otelx.WithLogWriter(capture),
-		otelx.WithLogLevel(zerolog.ErrorLevel),
-	)
-	require.NoError(t, err)
-	defer func() { _ = tel.Shutdown(context.Background()) }()
+	tel, capture := initLogging(t, otelx.Config{LogLevel: "error"})
 
 	assert.Equal(t, before, zerolog.GlobalLevel())
 
@@ -155,4 +64,24 @@ func TestInitialize_DoesNotChangeZerologGlobalLevel(t *testing.T) {
 	tel.Logger.Error().Msg("kept")
 	assert.False(t, capture.Contains("filtered"))
 	assert.True(t, capture.Contains("kept"))
+}
+
+func TestLoggerWithSpan(t *testing.T) {
+	ctx := context.Background()
+	tel, capture := initLogging(t, otelx.Config{Tracing: true, TraceExporter: tracetest.NewInMemoryExporter()})
+
+	noSpan := otelx.LoggerWithSpan(tel.Logger, ctx)
+	noSpan.Info().Msg("no span")
+
+	ctx, span := tel.TracerProvider.Tracer("test").Start(ctx, "span")
+	defer span.End()
+	inSpan := otelx.LoggerWithSpan(tel.Logger, ctx)
+	inSpan.Info().Msg("in span")
+
+	logs, err := capture.ParseJSONLogs()
+	require.NoError(t, err)
+	require.Len(t, logs, 2)
+	assert.NotContains(t, logs[0], "trace_id")
+	assert.Equal(t, span.SpanContext().TraceID().String(), logs[1]["trace_id"])
+	assert.Equal(t, span.SpanContext().SpanID().String(), logs[1]["span_id"])
 }

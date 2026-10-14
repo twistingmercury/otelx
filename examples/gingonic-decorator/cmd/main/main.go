@@ -3,30 +3,26 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/twistingmercury/otelx"
+	"github.com/twistingmercury/otelx/v2"
 	"github.com/twistingmercury/otelx_examples/gingonic/decorator/internal/server"
 )
 
 func main() {
 	ctx := context.Background()
 
-	// Get OTLP endpoint from env or use default
-	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
-	if endpoint == "" {
-		endpoint = "localhost:4317"
-	}
-
 	// Initialize telemetry
-	tel, err := otelx.Initialize(ctx,
-		otelx.WithService("uuid-api", "1.0.0", "development"),
-		otelx.WithDevelopmentDefaults(),
-		otelx.WithMetrics(9090),
-		otelx.WithTracing(),
-		otelx.WithOTLPEndpoint(endpoint),
-	)
+	// The OTLP endpoint and TLS settings come from OTEL_EXPORTER_OTLP_ENDPOINT
+	// and OTEL_EXPORTER_OTLP_INSECURE.
+	tel, err := otelx.Initialize(ctx, otelx.Config{
+		ServiceName:    "uuid-api",
+		ServiceVersion: "1.0.0",
+		Environment:    "development",
+		LogLevel:       "debug",
+		MetricsAddr:    ":9090",
+		Tracing:        true,
+	})
 	if err != nil {
 		log.Fatalf("failed to initialize telemetry: %s", err.Error())
 	}
