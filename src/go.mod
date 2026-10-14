@@ -1,4 +1,4 @@
-module github.com/twistingmercury/otelx/v2
+module github.com/twistingmercury/otelx/src/v2
 
 go 1.27.2
 

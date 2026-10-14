@@ -1,4 +1,4 @@
-module github.com/twistingmercury/otelx/middleware/gin/v2
+module github.com/twistingmercury/otelx/src/middleware/gin/v2
 
 go 1.27.2
 
@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/rs/zerolog v1.35.1
 	github.com/stretchr/testify v1.11.1
-	github.com/twistingmercury/otelx/v2 v2.0.0
+	github.com/twistingmercury/otelx/src/v2 v2.0.0
 )
 
 require (
@@ -71,4 +71,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/twistingmercury/otelx/v2 => ../../
+replace github.com/twistingmercury/otelx/src/v2 => ../../

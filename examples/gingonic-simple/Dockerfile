@@ -2,10 +2,10 @@ FROM golang:1.27.2-alpine AS builder
 
 WORKDIR /build
 
-COPY go.mod go.sum ./
-COPY *.go ./
-COPY internal/ ./internal/
-COPY middleware/ ./middleware/
+COPY src/go.mod src/go.sum ./src/
+COPY src/*.go ./src/
+COPY src/internal/ ./src/internal/
+COPY src/middleware/ ./src/middleware/
 
 COPY examples/gingonic-simple/ ./examples/gingonic-simple/
 

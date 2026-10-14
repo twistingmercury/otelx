@@ -12,8 +12,8 @@
 //
 //	import (
 //	    "github.com/gin-gonic/gin"
-//	    "github.com/twistingmercury/otelx/v2"
-//	    ginmw "github.com/twistingmercury/otelx/middleware/gin/v2"
+//	    "github.com/twistingmercury/otelx/src/v2"
+//	    ginmw "github.com/twistingmercury/otelx/src/middleware/gin/v2"
 //	)
 //
 //	func main() {

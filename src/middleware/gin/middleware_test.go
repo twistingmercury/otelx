@@ -12,8 +12,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/twistingmercury/otelx/v2"
-	ginmw "github.com/twistingmercury/otelx/middleware/gin/v2"
+	"github.com/twistingmercury/otelx/src/v2"
+	ginmw "github.com/twistingmercury/otelx/src/middleware/gin/v2"
 )
 
 func init() {

@@ -6,8 +6,8 @@ updates:
   # The library and the gin middleware are separate Go modules.
   - package-ecosystem: gomod
     directories:
-      - /
-      - /middleware/gin
+      - /src
+      - /src/middleware/gin
     schedule:
       interval: weekly
     groups:

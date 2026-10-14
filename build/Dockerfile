@@ -4,19 +4,23 @@ RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /workspace
 
-COPY go.mod go.sum go.work ./
-COPY middleware/gin/go.mod middleware/gin/go.sum ./middleware/gin/
+COPY src/go.mod src/go.sum src/go.work ./src/
+COPY src/middleware/gin/go.mod src/middleware/gin/go.sum ./src/middleware/gin/
 COPY examples/gingonic-simple/go.mod examples/gingonic-simple/go.sum ./examples/gingonic-simple/
 COPY examples/gingonic-decorator/go.mod examples/gingonic-decorator/go.sum ./examples/gingonic-decorator/
 
+WORKDIR /workspace/src
+
 RUN go mod download
+
+WORKDIR /workspace
 
 COPY . .
 
 RUN goimports -w .
 
 # The library and the gin middleware are separate modules; check both.
-ARG MODULES=". ./middleware/gin"
+ARG MODULES="src src/middleware/gin"
 
 RUN for m in $MODULES; do (cd "$m" && golangci-lint run) || exit 1; done
 RUN for m in $MODULES; do (cd "$m" && govulncheck ./...) || exit 1; done

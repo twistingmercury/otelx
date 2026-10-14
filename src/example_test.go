@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/twistingmercury/otelx/v2"
+	"github.com/twistingmercury/otelx/src/v2"
 	"go.opentelemetry.io/otel"
 )
 

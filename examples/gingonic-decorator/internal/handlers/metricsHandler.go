@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/twistingmercury/otelx/v2"
+	"github.com/twistingmercury/otelx/src/v2"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 )
