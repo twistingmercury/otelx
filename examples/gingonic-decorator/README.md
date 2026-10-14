@@ -24,6 +24,7 @@ type ginHandler struct{}
 
 func (h *ginHandler) GetUUID(c *gin.Context) {
     newUUID := uuid.New().String()
+    c.Set(uuidKey, newUUID) // read by the logging decorator
     c.JSON(http.StatusOK, gin.H{"uuid": newUUID})
 }
 ```
@@ -44,15 +45,22 @@ func (th *tracingHandler) GetUUID(c *gin.Context) {
 }
 ```
 
-Compose decorators by wrapping each other:
+Compose decorators by wrapping each other. Tracing is outermost, so the
+metrics and log line are recorded inside its span:
 
 ```go
-ginHandler, _ := handlers.NewGinHandler()
-tracingHandler, _ := handlers.NewTracingHandler(tel, ginHandler)
-metricsHandler, _ := handlers.NewMetricsHandler(tel, tracingHandler)
-loggingHandler, _ := handlers.NewLoggingHandler(tel, metricsHandler)
+ginHandler, err := handlers.NewGinHandler()
+if err != nil {
+    return err
+}
+loggingHandler := handlers.NewLoggingHandler(tel, ginHandler)
+metricsHandler, err := handlers.NewMetricsHandler(tel, loggingHandler)
+if err != nil {
+    return err
+}
+tracingHandler := handlers.NewTracingHandler(tel, metricsHandler)
 
-engine.GET("/api/uuid", loggingHandler.GetUUID)
+engine.GET("/api/uuid", tracingHandler.GetUUID)
 ```
 
 ## Request Flow
@@ -61,40 +69,33 @@ engine.GET("/api/uuid", loggingHandler.GetUUID)
 Request
    |
    v
-loggingHandler.GetUUID()    --> Logs request start
+tracingHandler.GetUUID()    --> Starts span, puts it in the request context
    |
    v
 metricsHandler.GetUUID()    --> Starts timing
    |
    v
-tracingHandler.GetUUID()    --> Creates span
+loggingHandler.GetUUID()    --> Calls the core handler first
    |
    v
 ginHandler.GetUUID()        --> Generates UUID, writes response
    |
    v
+loggingHandler              --> Logs the UUID with trace and span IDs
+   |
+   v
+metricsHandler              --> Records count and duration
+   |
+   v
 tracingHandler              --> Ends span
-   |
-   v
-metricsHandler              --> Records duration
-   |
-   v
-loggingHandler              --> Logs completion with trace ID
    |
    v
 Response
 ```
 
-## Tradeoffs: Combined vs Separate Decorators
-
-This example shows both approaches for educational purposes.
-
-| Aspect | Single Combined | Three Separate |
-|--------|-----------------|----------------|
-| Single Responsibility | Violates (3 concerns) | Each does one thing |
-| Composability | All-or-nothing | Mix and match |
-| Simplicity | Easier to use | More setup code |
-| Testability | Test all together | Test each independently |
+Separately, `LoggingMiddleware` from the otelx Gin module logs one line per
+request, and `otelgin` creates the server span that `generate-uuid` nests
+under.
 
 ## When to Use This Pattern
 

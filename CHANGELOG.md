@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.0.0] - Unreleased
+## [2.0.0] - 2026-10-14
 
 ### Breaking
 
@@ -82,6 +82,14 @@ middleware moved to its own module,
 - Upgraded `golang.org/x/net` to v0.60.0 for GO-2026-6603, GO-2026-6610,
   GO-2026-6611 and related HTTP/2 advisories
 
+## [1.0.2] - 2026-09-09
+
+### Changed
+
+- Updated the root and example modules, Go workspace, and verification build
+  image to Go 1.27.1
+- Refreshed dependencies in the root and example modules
+
 ## [1.0.1] - 2026-08-21
 
 ### Added
@@ -126,7 +134,8 @@ middleware moved to its own module,
 <!-- markdownlint-enable MD024 -->
 
 [Unreleased]: https://github.com/twistingmercury/otelx/compare/v2.0.0...HEAD
-[2.0.0]: https://github.com/twistingmercury/otelx/compare/v1.0.1...v2.0.0
+[2.0.0]: https://github.com/twistingmercury/otelx/compare/v1.0.2...v2.0.0
+[1.0.2]: https://github.com/twistingmercury/otelx/releases/tag/v1.0.2
 [1.0.1]: https://github.com/twistingmercury/otelx/releases/tag/v1.0.1
 [1.0.0]: https://github.com/twistingmercury/otelx/releases/tag/v1.0.0
 [0.0.1]: https://github.com/twistingmercury/otelx/releases/tag/v0.0.1
