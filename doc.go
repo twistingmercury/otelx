@@ -56,18 +56,31 @@
 //
 //   - service.name
 //   - service.version
-//   - deployment.environment
+//   - deployment.environment.name
 //   - host.name
 //   - process.pid
-//   - telemetry.sdk.name
-//   - telemetry.sdk.version
-//   - telemetry.sdk.language
+//   - telemetry.sdk.name, telemetry.sdk.version, telemetry.sdk.language
+//     (as reported by the OpenTelemetry Go SDK)
+//
+// Attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME are applied
+// last and override the values passed to WithService.
+//
+// # Global State
+//
+// Initialize sets these process-wide globals:
+//
+//   - otel.SetTracerProvider, when tracing is enabled
+//   - otel.SetTextMapPropagator (W3C Trace Context and Baggage), when tracing is enabled
+//   - otel.SetMeterProvider, when metrics are enabled
+//
+// It does not change zerolog's global level or use the default Prometheus
+// registry: each Telemetry has its own registry and metrics server. Calling
+// Initialize more than once is safe, but the globals above point at the most
+// recent call's providers.
 //
 // # Thread Safety
 //
 // The Telemetry struct and all its components are safe for concurrent use.
-// The global OpenTelemetry providers are set during initialization and
-// should not be modified afterward.
 //
 // # Shutdown
 //
@@ -76,7 +89,7 @@
 //
 //	defer tel.Shutdown(ctx)
 //
-// Shutdown will:
+// Shutdown will (returning every failure, joined with errors.Join):
 //   - Flush and close the trace provider
 //   - Flush and close the meter provider
 //   - Stop the metrics HTTP server (if running)

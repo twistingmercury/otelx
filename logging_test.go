@@ -2,6 +2,7 @@ package otelx_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/twistingmercury/otelx"
+	"github.com/twistingmercury/otelx/internal/testutil"
 )
 
 func TestSetupLogging_Disabled(t *testing.T) {
@@ -133,4 +135,24 @@ func TestLogging_WithError(t *testing.T) {
 	assert.Equal(t, "error", entry["level"])
 	assert.Equal(t, "operation failed", entry["message"])
 	assert.Equal(t, "assert.AnError general error for testing", entry["error"])
+}
+
+func TestInitialize_DoesNotChangeZerologGlobalLevel(t *testing.T) {
+	before := zerolog.GlobalLevel()
+	capture := testutil.NewLogCapture()
+
+	tel, err := otelx.Initialize(context.Background(),
+		otelx.WithService("test-service", "1.0.0", "test"),
+		otelx.WithLogWriter(capture),
+		otelx.WithLogLevel(zerolog.ErrorLevel),
+	)
+	require.NoError(t, err)
+	defer func() { _ = tel.Shutdown(context.Background()) }()
+
+	assert.Equal(t, before, zerolog.GlobalLevel())
+
+	tel.Logger.Info().Msg("filtered")
+	tel.Logger.Error().Msg("kept")
+	assert.False(t, capture.Contains("filtered"))
+	assert.True(t, capture.Contains("kept"))
 }

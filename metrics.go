@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 
+	prom "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -21,30 +24,41 @@ type MetricsServer struct {
 }
 
 // setupMetrics configures the Prometheus metrics exporter and returns a MeterProvider.
-// It also starts an HTTP server to serve the /metrics endpoint.
-func setupMetrics(ctx context.Context, cfg *Config, res *resource.Resource) (*metric.MeterProvider, *MetricsServer, error) {
+// It binds the metrics port before returning, so a port conflict is reported
+// as an error, and then serves the /metrics endpoint in the background.
+//
+// Each call uses its own Prometheus registry rather than the global default,
+// so several Telemetry instances in one process do not collide.
+func setupMetrics(_ context.Context, cfg *Config, res *resource.Resource) (*metric.MeterProvider, *MetricsServer, error) {
 	if !cfg.MetricsEnabled {
 		return nil, nil, nil
 	}
 
-	// Create Prometheus exporter
-	exporter, err := prometheus.New()
+	registry := prom.NewRegistry()
+	registry.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
+
+	exporter, err := prometheus.New(prometheus.WithRegisterer(registry))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create Prometheus exporter: %w", err)
 	}
 
-	// Create MeterProvider with the exporter
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.MetricsPort))
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to listen on metrics port %d: %w", cfg.MetricsPort, err)
+	}
+
 	mp := metric.NewMeterProvider(
 		metric.WithResource(res),
 		metric.WithReader(exporter),
 	)
 
-	// Create HTTP server for metrics
 	mux := http.NewServeMux()
-	mux.Handle(cfg.MetricsPath, promhttp.Handler())
+	mux.Handle(cfg.MetricsPath, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 
 	server := &http.Server{
-		Addr:              fmt.Sprintf(":%d", cfg.MetricsPort),
 		Handler:           mux,
 		ReadHeaderTimeout: 10 * time.Second,
 	}
@@ -55,10 +69,8 @@ func setupMetrics(ctx context.Context, cfg *Config, res *resource.Resource) (*me
 		path:   cfg.MetricsPath,
 	}
 
-	// Start the server in a goroutine
 	go func() {
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			// Log error but don't panic - the server might be intentionally stopped
+		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			fmt.Printf("metrics server error: %v\n", err)
 		}
 	}()

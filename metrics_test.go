@@ -2,6 +2,7 @@ package otelx_test
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -135,4 +136,50 @@ func TestMetrics_Counter(t *testing.T) {
 	body, status := testutil.FetchURL(t, tel.MetricsURL())
 	assert.Equal(t, http.StatusOK, status)
 	assert.Contains(t, body, "test_requests_total")
+}
+
+func TestInitialize_MetricsPortInUse(t *testing.T) {
+	ln, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
+	defer func() { _ = ln.Close() }()
+	port := ln.Addr().(*net.TCPAddr).Port
+
+	tel, err := otelx.Initialize(context.Background(),
+		otelx.WithService("test-service", "1.0.0", "test"),
+		otelx.WithMetrics(port),
+		otelx.WithoutLogging(),
+	)
+	require.Error(t, err, "Initialize must fail when the metrics port is taken")
+	assert.Nil(t, tel)
+}
+
+// Two Telemetry instances in one process must each serve their own metrics.
+func TestInitialize_TwiceServesSeparateMetrics(t *testing.T) {
+	ctx := context.Background()
+
+	init := func(counter string) *otelx.Telemetry {
+		tel, err := otelx.Initialize(ctx,
+			otelx.WithService("test-service", "1.0.0", "test"),
+			otelx.WithMetrics(testutil.GetFreePort(t)),
+			otelx.WithoutLogging(),
+		)
+		require.NoError(t, err)
+		t.Cleanup(func() { _ = tel.Shutdown(ctx) })
+
+		c, err := tel.Meter("test").Int64Counter(counter)
+		require.NoError(t, err)
+		c.Add(ctx, 1)
+		return tel
+	}
+	first := init("first_counter")
+	second := init("second_counter")
+
+	firstBody, _ := testutil.FetchURL(t, first.MetricsURL())
+	secondBody, _ := testutil.FetchURL(t, second.MetricsURL())
+
+	assert.Contains(t, firstBody, "first_counter")
+	assert.NotContains(t, firstBody, "second_counter")
+	assert.Contains(t, secondBody, "second_counter")
+	assert.NotContains(t, secondBody, "first_counter")
+	assert.Contains(t, firstBody, "go_goroutines", "Go runtime metrics should still be served")
 }

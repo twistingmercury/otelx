@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/rs/zerolog"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 // Default configuration values.
@@ -38,7 +39,7 @@ type Config struct {
 	// Tracing configuration
 	TracingEnabled  bool
 	TraceSampleRate float64
-	TraceExporter   interface{} // Custom trace exporter, if provided
+	TraceExporter   sdktrace.SpanExporter // Custom trace exporter, if provided
 	OTLPEndpoint    string
 	OTLPInsecure    bool
 }

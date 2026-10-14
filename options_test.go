@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/twistingmercury/otelx"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 func TestWithService(t *testing.T) {
@@ -129,7 +130,7 @@ func TestWithTraceSampleRate(t *testing.T) {
 
 func TestWithTraceExporter(t *testing.T) {
 	cfg := otelx.NewDefaultConfig()
-	exporter := "mock-exporter"
+	exporter := tracetest.NewInMemoryExporter()
 	opt := otelx.WithTraceExporter(exporter)
 
 	err := opt(cfg)
