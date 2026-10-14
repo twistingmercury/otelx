@@ -12,8 +12,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/twistingmercury/otelx"
-	ginmw "github.com/twistingmercury/otelx/middleware/gin"
+	"github.com/twistingmercury/otelx/v2"
+	ginmw "github.com/twistingmercury/otelx/v2/middleware/gin"
 )
 
 func init() {
@@ -24,11 +24,13 @@ func init() {
 func setupTelemetry(t *testing.T, logBuf *bytes.Buffer) *otelx.Telemetry {
 	t.Helper()
 
-	tel, err := otelx.Initialize(context.Background(),
-		otelx.WithService("test-service", "1.0.0", "test"),
-		otelx.WithLogWriter(logBuf),
-		otelx.WithLogLevel(zerolog.DebugLevel),
-	)
+	tel, err := otelx.Initialize(context.Background(), otelx.Config{
+		ServiceName:    "test-service",
+		ServiceVersion: "1.0.0",
+		Environment:    "test",
+		LogWriter:      logBuf,
+		LogLevel:       "debug",
+	})
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = tel.Shutdown(context.Background())

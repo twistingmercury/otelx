@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
-	"github.com/twistingmercury/otelx"
+	"github.com/twistingmercury/otelx/v2"
 )
 
 // LoggingMiddleware creates middleware that provides trace-correlated logging

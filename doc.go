@@ -1,69 +1,51 @@
-// Package otelx provides a unified initialization API for OpenTelemetry
-// telemetry signals including logging, metrics, and tracing.
-//
-// otelx is the spiritual successor to github.com/twistingmercury/telemetry/v2,
-// providing a simpler, more idiomatic Go API for initializing and managing
-// OpenTelemetry components in your applications.
+// Package otelx sets up OpenTelemetry tracing, Prometheus metrics and a
+// trace-aware zerolog logger for a service with one call.
 //
 // # Quick Start
 //
-// The simplest way to get started is to use Initialize with the required
-// service identity option:
-//
-//	tel, err := otelx.Initialize(ctx,
-//	    otelx.WithService("my-service", "1.0.0", "production"),
-//	    otelx.WithMetrics(9090),
-//	    otelx.WithTracing(),
-//	)
+//	tel, err := otelx.Initialize(ctx, otelx.Config{
+//	    ServiceName:    "my-service",
+//	    ServiceVersion: "1.0.0",
+//	    Environment:    "production",
+//	    MetricsAddr:    ":9090",
+//	    Tracing:        true,
+//	})
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
 //	defer tel.Shutdown(ctx)
 //
-// # Components
+// Create spans and instruments with otel.Tracer and otel.Meter, and add the
+// current span to log lines with LoggerWithSpan.
 //
-// otelx initializes three telemetry signals:
+// # Signals
 //
-//   - Logging: Structured logging via zerolog with OpenTelemetry trace correlation
-//   - Metrics: Prometheus metrics exposition via an HTTP server
-//   - Tracing: Distributed tracing via OTLP gRPC exporter
+//   - Logging: always on. JSON lines from zerolog, tagged with the service
+//     identity. otelx does not send logs through the OpenTelemetry logs
+//     signal; LoggerWithSpan adds trace_id and span_id fields so logs can be
+//     joined to traces.
+//   - Metrics: on when Config.MetricsAddr is set. Served in Prometheus format
+//     from Config.MetricsPath, together with Go runtime and process metrics.
+//   - Tracing: on when Config.Tracing is true. Spans go to the OTLP gRPC
+//     exporter, or to Config.TraceExporter when set.
 //
-// Each signal can be enabled or disabled independently using options.
+// # Environment Variables
 //
-// # Configuration Options
+// otelx leaves standard OpenTelemetry settings to the environment:
 //
-// otelx uses functional options for configuration:
-//
-//   - WithService: Required. Sets service name, version, and environment
-//   - WithLogLevel: Sets the minimum log level (default: Info)
-//   - WithLogWriter: Sets the log output writer (default: os.Stdout)
-//   - WithoutLogging: Disables logging entirely
-//   - WithMetrics: Enables Prometheus metrics on the specified port
-//   - WithMetricsPath: Sets the metrics endpoint path (default: /metrics)
-//   - WithTracing: Enables OTLP tracing
-//   - WithTraceSampleRate: Sets the trace sampling rate (0.0-1.0)
-//   - WithTraceExporter: Uses a custom trace exporter
-//   - WithOTLPEndpoint: Sets the OTLP collector endpoint
-//   - WithOTLPInsecure: Disables TLS for OTLP connections
-//   - WithAllSignals: Enables metrics (port 9090) and tracing
-//   - WithDevelopmentDefaults: Enables debug logging, pretty output, insecure connections
-//   - WithProductionDefaults: Enables info logging, JSON output, TLS, 10% sampling
+//   - OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,
+//     OTEL_EXPORTER_OTLP_HEADERS, OTEL_EXPORTER_OTLP_INSECURE and the other
+//     OTEL_EXPORTER_OTLP_* variables configure the default exporter.
+//   - OTEL_TRACES_SAMPLER and OTEL_TRACES_SAMPLER_ARG choose the sampler
+//     unless Config.Sampler is set. The default is ParentBased(AlwaysSample).
+//   - OTEL_SERVICE_NAME and OTEL_RESOURCE_ATTRIBUTES add resource attributes
+//     and override the values in Config.
 //
 // # Resource Attributes
 //
-// otelx automatically creates an OpenTelemetry resource with standard
-// semantic conventions including:
-//
-//   - service.name
-//   - service.version
-//   - deployment.environment.name
-//   - host.name
-//   - process.pid
-//   - telemetry.sdk.name, telemetry.sdk.version, telemetry.sdk.language
-//     (as reported by the OpenTelemetry Go SDK)
-//
-// Attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME are applied
-// last and override the values passed to WithService.
+// Traces and metrics carry service.name, service.version,
+// deployment.environment.name, host.name, process.pid and the SDK's
+// telemetry.sdk.* attributes, plus anything from the environment.
 //
 // # Global State
 //
@@ -78,19 +60,8 @@
 // Initialize more than once is safe, but the globals above point at the most
 // recent call's providers.
 //
-// # Thread Safety
-//
-// The Telemetry struct and all its components are safe for concurrent use.
-//
 // # Shutdown
 //
-// Always call Shutdown on the returned Telemetry struct to ensure proper
-// cleanup of resources:
-//
-//	defer tel.Shutdown(ctx)
-//
-// Shutdown will (returning every failure, joined with errors.Join):
-//   - Flush and close the trace provider
-//   - Flush and close the meter provider
-//   - Stop the metrics HTTP server (if running)
+// Shutdown flushes and stops the tracer provider, the meter provider and the
+// metrics server, and returns every failure joined with errors.Join.
 package otelx

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/twistingmercury/otelx"
-	otelxgin "github.com/twistingmercury/otelx/middleware/gin"
+	"github.com/twistingmercury/otelx/v2"
+	otelxgin "github.com/twistingmercury/otelx/v2/middleware/gin"
 	"github.com/twistingmercury/otelx_examples/gingonic/simple/internal/handlers"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
