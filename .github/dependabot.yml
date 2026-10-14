@@ -1,0 +1,30 @@
+# Dependabot version updates. Security updates are enabled separately in
+# Settings > Code security and reuse this file's settings.
+version: 2
+
+updates:
+  # The library and the gin middleware are separate Go modules.
+  - package-ecosystem: gomod
+    directories:
+      - /
+      - /middleware/gin
+    schedule:
+      interval: weekly
+    groups:
+      opentelemetry:
+        patterns:
+          - go.opentelemetry.io/*
+      go-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - go.opentelemetry.io/*
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+# Docker is intentionally not tracked: build/Dockerfile and the example
+# Dockerfiles pin the Go toolchain image to the repo's Go version, and that
+# pin moves together with go.mod and go.work, not on its own.
