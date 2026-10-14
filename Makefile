@@ -10,7 +10,7 @@ build: ## Build and validate the project in Docker
 	IS_LOCAL=1 build/build.sh
 
 analyze: ## Run analysis in Docker
-	goimports -w src
+	test -z "$$(goimports -l src)" || { goimports -l src; echo 'goimports: files need formatting'; exit 1; }
 	for m in $(MODULES); do (cd $$m && golangci-lint run && govulncheck ./... && gosec -quiet -exclude-dir=tests ./...) || exit 1; done
 
 unit-test: ## Run unit tests in Docker
