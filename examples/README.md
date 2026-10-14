@@ -153,6 +153,7 @@ type ginHandler struct{}
 
 func (h *ginHandler) GetUUID(c *gin.Context) {
     newUUID := uuid.New().String()
+    c.Set(uuidKey, newUUID) // read by the logging decorator
     c.JSON(http.StatusOK, gin.H{"uuid": newUUID})
 }
 
@@ -170,21 +171,28 @@ func (th *tracingHandler) GetUUID(c *gin.Context) {
 }
 ```
 
-Decorators compose by wrapping each other:
+Decorators compose by wrapping each other. Tracing is outermost, so the
+metrics and log line are recorded inside its span:
 
 ```go
-ginHandler, _ := handlers.NewGinHandler()
-tracingHandler, _ := handlers.NewTracingHandler(tel, ginHandler)
-metricsHandler, _ := handlers.NewMetricsHandler(tel, tracingHandler)
-loggingHandler, _ := handlers.NewLoggingHandler(tel, metricsHandler)
+ginHandler, err := handlers.NewGinHandler()
+if err != nil {
+    return err
+}
+loggingHandler := handlers.NewLoggingHandler(tel, ginHandler)
+metricsHandler, err := handlers.NewMetricsHandler(tel, loggingHandler)
+if err != nil {
+    return err
+}
+tracingHandler := handlers.NewTracingHandler(tel, metricsHandler)
 
-engine.GET("/api/uuid", loggingHandler.GetUUID)
+engine.GET("/api/uuid", tracingHandler.GetUUID)
 ```
 
 Request flow:
 
 ```text
-Request --> Logging --> Metrics --> Tracing --> Core Handler --> Response
+Request --> Tracing --> Metrics --> Logging --> Core Handler --> Response
 ```
 
 ## Pattern Comparison

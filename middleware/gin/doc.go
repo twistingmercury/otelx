@@ -80,8 +80,13 @@
 //   - status: HTTP status code
 //   - latency_ms: Request duration in milliseconds
 //   - client_ip: Client IP address
+//   - bytes: Response body size in bytes
+//   - error: Errors attached to the gin.Context, when there are any
 //   - trace_id: OpenTelemetry trace ID (if tracing is active)
 //   - span_id: OpenTelemetry span ID (if tracing is active)
 //   - Any configured request headers
 //   - Any custom fields from WithCustomFields
+//
+// The raw query string is never logged, because it can carry tokens or
+// personal data.
 package gin

@@ -1,5 +1,10 @@
 # Plan: otelx Standalone Project
 
+> **Historical.** This is the original v1 plan. v2 replaced the functional
+> options with a `Config` struct and moved the Gin middleware to its own
+> module; see [README.md](../../README.md) and [CHANGELOG.md](../../CHANGELOG.md)
+> for the current design.
+
 ## Overview
 
 Create a new standalone Go project `otelx` at `/Users/doublej/dev/otelx` as the spiritual successor to the deprecated `github.com/twistingmercury/telemetry/v2`.
