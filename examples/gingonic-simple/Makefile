@@ -10,6 +10,10 @@ help: ## Show this help
 local: ## Build locally using workspace
 	 go build -o .out/gingonic-simple cmd/main/main.go
 
+# A local collector without TLS; set OTEL_EXPORTER_OTLP_ENDPOINT to point elsewhere.
+OTEL_EXPORTER_OTLP_ENDPOINT ?= http://localhost:4317
+export OTEL_EXPORTER_OTLP_ENDPOINT
+
 run: ## Run locally for dev purposes
 	go run cmd/main/main.go
 

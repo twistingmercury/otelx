@@ -38,10 +38,13 @@ Or build first:
 
 ```bash
 make local
-.out/uuid_api
+.out/gingonic-simple  # or .out/gingonic-decorator
 ```
 
-Ports: 8080 (API), 9090 (Prometheus metrics).
+Ports: 8080 (API), 9090 (Prometheus metrics). `make run` sends traces to
+`http://localhost:4317` without TLS; set `OTEL_EXPORTER_OTLP_ENDPOINT` to use
+another collector. otelx reads that and the other standard `OTEL_*` variables
+directly.
 
 ### Full Observability Stack
 
