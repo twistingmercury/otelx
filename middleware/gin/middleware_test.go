@@ -12,8 +12,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/twistingmercury/otelx"
-	ginmw "github.com/twistingmercury/otelx/middleware/gin"
+	"github.com/twistingmercury/otelx/v2"
+	ginmw "github.com/twistingmercury/otelx/middleware/gin/v2"
 )
 
 func init() {
@@ -24,11 +24,13 @@ func init() {
 func setupTelemetry(t *testing.T, logBuf *bytes.Buffer) *otelx.Telemetry {
 	t.Helper()
 
-	tel, err := otelx.Initialize(context.Background(),
-		otelx.WithService("test-service", "1.0.0", "test"),
-		otelx.WithLogWriter(logBuf),
-		otelx.WithLogLevel(zerolog.DebugLevel),
-	)
+	tel, err := otelx.Initialize(context.Background(), otelx.Config{
+		ServiceName:    "test-service",
+		ServiceVersion: "1.0.0",
+		Environment:    "test",
+		LogWriter:      logBuf,
+		LogLevel:       "debug",
+	})
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = tel.Shutdown(context.Background())
@@ -251,7 +253,8 @@ func TestLoggingMiddleware_WithCustomFields(t *testing.T) {
 	assert.Equal(t, float64(42), rawEntry["request_no"])
 }
 
-func TestLoggingMiddleware_WithQueryParams(t *testing.T) {
+// The query string can carry tokens or personal data, so it is never logged.
+func TestLoggingMiddleware_OmitsQueryString(t *testing.T) {
 	logBuf := &bytes.Buffer{}
 	tel := setupTelemetry(t, logBuf)
 
@@ -261,12 +264,14 @@ func TestLoggingMiddleware_WithQueryParams(t *testing.T) {
 		c.String(http.StatusOK, "results")
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/search?q=test&page=1", nil)
+	req := httptest.NewRequest(http.MethodGet, "/search?q=test&token=secret", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
 	entry := parseLogEntry(t, logBuf)
-	assert.Equal(t, "q=test&page=1", entry.Query)
+	assert.Equal(t, "/search", entry.Path)
+	assert.Empty(t, entry.Query)
+	assert.NotContains(t, logBuf.String(), "secret")
 }
 
 func TestLoggingMiddleware_WithGinErrors(t *testing.T) {

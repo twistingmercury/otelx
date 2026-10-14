@@ -1,4 +1,5 @@
 DOCKER ?= docker
+MODULES := . ./middleware/gin
 VERIFY_IMAGE ?= otelx-ci:local
 
 .PHONY: build docker-build unit-test analyze help
@@ -10,13 +11,10 @@ build: ## Build and validate the project in Docker
 
 analyze: ## Run analysis in Docker
 	goimports -w .
-	golangci-lint run
-	govulncheck ./...
-	gosec -quiet -exclude-dir=tests ./...
+	for m in $(MODULES); do (cd $$m && golangci-lint run && govulncheck ./... && gosec -quiet -exclude-dir=tests ./...) || exit 1; done
 
 unit-test: ## Run unit tests in Docker
-	go vet ./...
-	CGO_ENABLED=1 go test -race ./...
+	for m in $(MODULES); do (cd $$m && go vet ./... && CGO_ENABLED=1 go test -race ./...) || exit 1; done
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nAvailable targets:\n"} /^[a-zA-Z0-9_-]+:.*##/ { printf "  %-12s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)

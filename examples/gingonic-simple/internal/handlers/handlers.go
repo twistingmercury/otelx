@@ -7,8 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/twistingmercury/otelx"
-	otelxgin "github.com/twistingmercury/otelx/middleware/gin"
+	"github.com/twistingmercury/otelx/v2"
+	otelxgin "github.com/twistingmercury/otelx/middleware/gin/v2"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
@@ -24,7 +25,7 @@ type Handler struct {
 
 // NewHandler creates a new Handler.
 func NewHandler(tel *otelx.Telemetry) (*Handler, error) {
-	meter := tel.Meter("uuid-api")
+	meter := otel.Meter("uuid-api")
 
 	uuidCounter, err := meter.Int64Counter("uuid_generated_total",
 		metric.WithDescription("Total number of UUIDs generated"),
@@ -42,7 +43,7 @@ func NewHandler(tel *otelx.Telemetry) (*Handler, error) {
 
 	return &Handler{
 		tel:          tel,
-		tracer:       tel.Tracer("uuid-api"),
+		tracer:       otel.Tracer("uuid-api"),
 		uuidCounter:  uuidCounter,
 		durationHist: durationHist,
 	}, nil

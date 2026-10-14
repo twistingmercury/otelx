@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
-	"github.com/twistingmercury/otelx"
+	"github.com/twistingmercury/otelx/v2"
 )
 
 // LoggingMiddleware creates middleware that provides trace-correlated logging
@@ -65,18 +65,14 @@ func LoggingMiddleware(tel *otelx.Telemetry, opts ...Option) gin.HandlerFunc {
 			event = logger.WithLevel(cfg.logLevel)
 		}
 
-		// Add standard fields
+		// Add standard fields. The query string is left out because it can
+		// carry tokens or personal data.
 		event.
 			Str("method", c.Request.Method).
 			Str("path", path).
 			Int("status", status).
 			Float64("latency_ms", float64(latency.Nanoseconds())/1e6).
 			Str("client_ip", c.ClientIP())
-
-		// Add query parameters if present
-		if rawQuery := c.Request.URL.RawQuery; rawQuery != "" {
-			event.Str("query", rawQuery)
-		}
 
 		// Add configured request headers
 		for _, header := range cfg.requestHeaders {

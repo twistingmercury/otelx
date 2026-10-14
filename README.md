@@ -1,21 +1,38 @@
 # otelx
 
 > **Maturity Level**: Emerging - Initial development, API subject to change
-> **Version**: v1.0.2
 
-A Go library for unified OpenTelemetry initialization with a single function call.
+otelx sets up OpenTelemetry tracing, Prometheus metrics and a trace-aware
+[zerolog](https://github.com/rs/zerolog) logger for a Go service with one call.
+It configures what a service needs, leaves everything else to the standard
+`OTEL_*` environment variables, and hands back the real SDK providers.
 
-## Table of Contents
+```mermaid
+flowchart LR
+    cfg["otelx.Config"] --> init["otelx.Initialize"]
+    env["OTEL_* environment"] --> init
+    init --> log["Logger<br/>zerolog JSON"]
+    init --> mp["MeterProvider"]
+    init --> tp["TracerProvider"]
+    mp --> prom["/metrics<br/>Prometheus"]
+    tp --> otlp["OTLP gRPC<br/>collector"]
+    log -. "LoggerWithSpan<br/>adds trace_id, span_id" .- tp
+```
 
-- [Usage](#usage)
-- [How it works](#how-it-works)
-- [Key Considerations](#key-considerations)
-- [Development Considerations](#development-considerations)
-- [Versioning](#versioning)
+## Install
+
+```bash
+go get github.com/twistingmercury/otelx/v2
+```
+
+The optional Gin middleware is a separate module, so services that don't use
+Gin don't download it:
+
+```bash
+go get github.com/twistingmercury/otelx/middleware/gin/v2
+```
 
 ## Usage
-
-Initialize all telemetry signals with one call:
 
 ```go
 package main
@@ -24,186 +41,169 @@ import (
     "context"
     "log"
 
-    "github.com/twistingmercury/otelx"
+    "github.com/twistingmercury/otelx/v2"
+    "go.opentelemetry.io/otel"
 )
 
 func main() {
     ctx := context.Background()
 
-    tel, err := otelx.Initialize(ctx,
-        otelx.WithService("my-service", "1.0.0", "production"),
-        otelx.WithMetrics(9090),
-        otelx.WithTracing(),
-    )
+    tel, err := otelx.Initialize(ctx, otelx.Config{
+        ServiceName:    "my-service",
+        ServiceVersion: "1.0.0",
+        Environment:    "production",
+        MetricsAddr:    ":9090",
+        Tracing:        true,
+    })
     if err != nil {
         log.Fatal(err)
     }
     defer tel.Shutdown(ctx)
 
-    // Use the initialized components
-    tel.Logger.Info().Msg("service started")
+    // Spans and instruments come from the global providers otelx registered.
+    ctx, span := otel.Tracer("my-service").Start(ctx, "operation")
+    defer span.End()
 
-    // Create metrics
-    meter := tel.MeterProvider.Meter("my-service")
-    counter, _ := meter.Int64Counter("requests_total")
+    counter, _ := otel.Meter("my-service").Int64Counter("requests")
     counter.Add(ctx, 1)
 
-    // Create traces
-    tracer := tel.TracerProvider.Tracer("my-service")
-    ctx, span := tracer.Start(ctx, "operation")
-    defer span.End()
+    // LoggerWithSpan adds trace_id and span_id so logs join to traces.
+    logger := otelx.LoggerWithSpan(tel.Logger, ctx)
+    logger.Info().Msg("handled request")
 }
 ```
 
-### Configuration Options
+### Config
 
-#### Service Identity (Required)
+Every field is optional except `ServiceName`, and `OTEL_SERVICE_NAME` can
+supply that instead.
 
-```go
-otelx.WithService("service-name", "1.0.0", "production")
-```
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `ServiceName` | none | `service.name` resource attribute and `service` log field |
+| `ServiceVersion` | none | `service.version` attribute and `version` log field |
+| `Environment` | none | `deployment.environment.name` attribute and `environment` log field |
+| `LogLevel` | `"info"` | zerolog level name: `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic` or `disabled` |
+| `LogWriter` | `os.Stdout` | Where JSON log lines go |
+| `MetricsAddr` | metrics off | Listen address for the Prometheus server, such as `":9090"` or `":0"` |
+| `MetricsPath` | `"/metrics"` | HTTP path for metrics |
+| `Tracing` | `false` | Turns on the tracer provider |
+| `TraceExporter` | OTLP gRPC | A `sdktrace.SpanExporter` to use instead of OTLP |
+| `Sampler` | from `OTEL_TRACES_SAMPLER` | A `sdktrace.Sampler` that overrides the environment |
 
-#### Logging
+### Environment variables
 
-```go
-otelx.WithLogLevel(zerolog.DebugLevel)  // Default: Info
-otelx.WithLogWriter(os.Stderr)          // Default: os.Stdout
-otelx.WithoutLogging()                  // Disable logging
-```
+otelx does not duplicate settings the OpenTelemetry SDK already reads. The
+common ones:
 
-#### Metrics
+| Variable | Effect |
+| --- | --- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Collector address, such as `http://otel-collector:4317`. An `http://` scheme also turns off TLS. Default `https://localhost:4317`. |
+| `OTEL_EXPORTER_OTLP_INSECURE` | `true` turns off TLS |
+| `OTEL_EXPORTER_OTLP_HEADERS` | Extra headers as URL-encoded `key=value` pairs, such as `authorization=Bearer%20token` |
+| `OTEL_TRACES_SAMPLER`, `OTEL_TRACES_SAMPLER_ARG` | Sampler, such as `parentbased_traceidratio` with `0.1`. Default `parentbased_always_on`. |
+| `OTEL_SERVICE_NAME` | Overrides `Config.ServiceName` |
+| `OTEL_RESOURCE_ATTRIBUTES` | Extra resource attributes; they override `Config` values |
 
-```go
-otelx.WithMetrics(9090)                 // Enable Prometheus on port
-otelx.WithMetricsPath("/custom/metrics") // Default: /metrics
-otelx.WithoutMetrics()                  // Disable metrics
-```
-
-#### Tracing
-
-```go
-otelx.WithTracing()                     // Enable OTLP tracing
-otelx.WithTraceSampler(sdktrace.AlwaysSample())
-otelx.WithTraceSampleRate(0.1)          // 10% sampling
-otelx.WithoutTracing()                  // Disable tracing
-```
-
-#### OTLP Configuration
-
-```go
-otelx.WithOTLPEndpoint("collector.example.com:4317") // Default: localhost:4317
-otelx.WithOTLPInsecure()                             // Disable TLS
-otelx.WithOTLPHeaders(map[string]string{"Authorization": "Bearer token"})
-```
-
-#### Presets
-
-```go
-otelx.WithAllSignals()          // Metrics (9090) + tracing
-otelx.WithDevelopmentDefaults() // Debug, pretty logging, insecure OTLP
-otelx.WithProductionDefaults()  // Info, JSON logging, TLS, 10% sampling
-```
-
-### The Telemetry Struct
-
-`Initialize()` returns a `*Telemetry` struct:
+### The Telemetry struct
 
 ```go
 type Telemetry struct {
     Logger         zerolog.Logger
-    MeterProvider  *sdkmetric.MeterProvider
-    TracerProvider *sdktrace.TracerProvider
+    MeterProvider  *sdkmetric.MeterProvider // nil when metrics are off
+    TracerProvider *sdktrace.TracerProvider // nil when tracing is off
 }
+
+func (t *Telemetry) Shutdown(ctx context.Context) error
+func (t *Telemetry) MetricsURL() string
 ```
 
-Call `Shutdown()` when your application exits to flush pending telemetry data.
+`Shutdown` flushes and stops everything and returns every failure joined with
+`errors.Join`. `MetricsURL` reports the address actually bound, which matters
+when `MetricsAddr` uses port 0.
+
+### Gin middleware
+
+```go
+import ginmw "github.com/twistingmercury/otelx/middleware/gin/v2"
+
+r := gin.New()
+r.Use(ginmw.LoggingMiddleware(tel, ginmw.WithSkipPaths("/health")))
+
+r.GET("/users", func(c *gin.Context) {
+    logger := ginmw.Logger(c, tel)
+    logger.Info().Msg("listing users")
+})
+```
+
+`LoggingMiddleware` logs method, path, status, latency, client IP, response
+size and trace IDs for each request. It does not log the query string, which
+can carry tokens or personal data. `CorrelationMiddleware` stores the
+trace-aware logger without logging requests. The middleware does not create
+spans; pair it with
+[otelgin](https://pkg.go.dev/go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin)
+for that, as the [examples](examples/) do.
 
 ## How it works
 
-otelx wraps the official OpenTelemetry Go SDK to provide a unified
-initialization experience. Instead of configuring logging, metrics, and tracing
-separately, you call `Initialize()` once with functional options.
+**Logging** is a plain zerolog JSON logger tagged with the service identity.
+otelx does not send logs through the OpenTelemetry logs signal. Instead,
+`LoggerWithSpan` copies the current span's trace and span IDs into the log
+line, so a log backend can link entries to traces.
 
-**Logging**: Uses [zerolog](https://github.com/rs/zerolog) with automatic trace
-correlation via
-[otelzerolog](https://github.com/agoda-com/opentelemetry-go/tree/main/otelzerolog).
-Log entries automatically include trace and span IDs when a trace context is
-active.
+**Metrics** use the OpenTelemetry Prometheus exporter. Each `Telemetry` gets
+its own Prometheus registry and HTTP server, with Go runtime and process
+metrics included. `Initialize` binds the port before returning, so a port
+conflict is an error.
 
-**Metrics**: Uses the official OpenTelemetry Prometheus exporter. When enabled,
-otelx starts an HTTP server on the specified port exposing metrics at the
-configured path.
+**Tracing** uses the OTLP gRPC exporter with a batch span processor. The
+default sampler respects the parent span's decision, so traces that start
+upstream stay whole.
 
-**Tracing**: Uses the OTLP gRPC exporter to send traces to an OpenTelemetry
-Collector or compatible backend.
+**Resources** carry `service.name`, `service.version`,
+`deployment.environment.name`, `host.name`, `process.pid` and the SDK's own
+`telemetry.sdk.*` attributes, plus anything from the environment.
 
-The functional options pattern lets you enable only the signals you need and
-customize each component independently.
+## Global state
 
-## Key Considerations
+`Initialize` sets these process-wide globals:
 
-- **WithService is required**: You must provide service name, version, and
-  environment for proper telemetry identification
-- **Shutdown is essential**: Always call `tel.Shutdown(ctx)` to flush pending
-  telemetry before your application exits
-- **Metrics port binding**: When metrics are enabled, otelx binds to the
-  specified port; ensure it is available
-- **OTLP endpoint**: Tracing requires an OpenTelemetry Collector or compatible
-  endpoint; configure `WithOTLPEndpoint()` for non-local deployments
-- **TLS by default**: Production tracing uses TLS; use `WithOTLPInsecure()` only
-  for local development
+- `otel.SetTracerProvider` and `otel.SetTextMapPropagator` (W3C Trace Context
+  and Baggage), when tracing is on
+- `otel.SetMeterProvider`, when metrics are on
 
-## Development Considerations
+It does not change zerolog's global level or use the default Prometheus
+registry. Calling `Initialize` more than once is safe, but the globals point
+at the most recent call's providers.
 
-### Quick Start
+## Upgrading from v1
 
-Requires Go 1.27.1 or later.
+The module path changed to `github.com/twistingmercury/otelx/v2` and
+`Initialize` takes a `Config` instead of options. [CHANGELOG.md](CHANGELOG.md)
+maps each v1 option to its replacement.
 
-```bash
-go mod tidy
-go build ./...
-```
-
-### Building and running
-
-Build the library:
+## Development
 
 ```bash
-go build ./...
+make unit-test   # go vet and race tests for every module
+make analyze     # goimports, golangci-lint, govulncheck and gosec
+make build       # the full CI check inside Docker
 ```
 
-Run the simple Gin example from the repository root:
+The repository holds two modules: the library at the root and the Gin
+middleware in `middleware/gin`. `go.work` ties them and the examples together
+for local work, and the Makefile and Docker build run each check in both
+modules.
+
+### Releasing
+
+Tag the library first, then the middleware, because the middleware requires
+the library version:
 
 ```bash
-go run ./examples/gingonic-simple/cmd/main
-```
-
-See the [examples guide](examples/README.md) for the observability stack and
-decorator example.
-
-### Testing
-
-Run all tests:
-
-```bash
-go test ./...
-```
-
-Run tests with coverage:
-
-```bash
-go test -cover ./...
-```
-
-### Versioning
-
-This project uses git tag-based semantic versioning. Version tags follow the
-format `vX.Y.Z`.
-
-Import the module:
-
-```go
-import "github.com/twistingmercury/otelx"
+git tag v2.0.0
+git tag middleware/gin/v2.0.0
+git push origin v2.0.0 middleware/gin/v2.0.0
 ```
 
 ## License
