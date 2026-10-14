@@ -1,99 +1,87 @@
 package otelx
 
 import (
-	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 
+	prom "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 )
 
-// MetricsServer wraps an HTTP server that serves Prometheus metrics.
-type MetricsServer struct {
+// metricsServer serves Prometheus metrics for one Telemetry.
+type metricsServer struct {
 	server *http.Server
-	port   int
-	path   string
+	url    string
 }
 
-// setupMetrics configures the Prometheus metrics exporter and returns a MeterProvider.
-// It also starts an HTTP server to serve the /metrics endpoint.
-func setupMetrics(ctx context.Context, cfg *Config, res *resource.Resource) (*metric.MeterProvider, *MetricsServer, error) {
-	if !cfg.MetricsEnabled {
+// setupMetrics returns a MeterProvider and a running metrics server, or nils
+// when metrics are disabled. It binds cfg.MetricsAddr before returning, so a
+// port conflict is reported as an error.
+//
+// Each call uses its own Prometheus registry rather than the global default,
+// so several Telemetry instances in one process do not collide.
+func setupMetrics(cfg Config, res *resource.Resource) (*metric.MeterProvider, *metricsServer, error) {
+	if cfg.MetricsAddr == "" {
 		return nil, nil, nil
 	}
 
-	// Create Prometheus exporter
-	exporter, err := prometheus.New()
+	registry := prom.NewRegistry()
+	registry.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
+
+	exporter, err := prometheus.New(prometheus.WithRegisterer(registry))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create Prometheus exporter: %w", err)
 	}
 
-	// Create MeterProvider with the exporter
+	listener, err := net.Listen("tcp", cfg.MetricsAddr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to listen on metrics address %q: %w", cfg.MetricsAddr, err)
+	}
+
 	mp := metric.NewMeterProvider(
 		metric.WithResource(res),
 		metric.WithReader(exporter),
 	)
 
-	// Create HTTP server for metrics
 	mux := http.NewServeMux()
-	mux.Handle(cfg.MetricsPath, promhttp.Handler())
+	mux.Handle(cfg.MetricsPath, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 
 	server := &http.Server{
-		Addr:              fmt.Sprintf(":%d", cfg.MetricsPort),
 		Handler:           mux,
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	metricsServer := &MetricsServer{
-		server: server,
-		port:   cfg.MetricsPort,
-		path:   cfg.MetricsPath,
-	}
-
-	// Start the server in a goroutine
 	go func() {
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			// Log error but don't panic - the server might be intentionally stopped
+		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			fmt.Printf("metrics server error: %v\n", err)
 		}
 	}()
 
-	return mp, metricsServer, nil
+	return mp, &metricsServer{
+		server: server,
+		url:    metricsURL(listener.Addr(), cfg.MetricsPath),
+	}, nil
 }
 
-// Shutdown gracefully shuts down the metrics server.
-func (s *MetricsServer) Shutdown(ctx context.Context) error {
-	if s == nil || s.server == nil {
-		return nil
-	}
-	return s.server.Shutdown(ctx)
-}
-
-// Port returns the port the metrics server is listening on.
-func (s *MetricsServer) Port() int {
-	if s == nil {
-		return 0
-	}
-	return s.port
-}
-
-// Path returns the path the metrics are served on.
-func (s *MetricsServer) Path() string {
-	if s == nil {
+// metricsURL builds a URL for addr, using localhost when the server listens
+// on every interface.
+func metricsURL(addr net.Addr, path string) string {
+	host, port, err := net.SplitHostPort(addr.String())
+	if err != nil {
 		return ""
 	}
-	return s.path
-}
-
-// URL returns the full URL to access the metrics endpoint.
-func (s *MetricsServer) URL() string {
-	if s == nil {
-		return ""
+	if ip := net.ParseIP(host); ip == nil || ip.IsUnspecified() {
+		host = "localhost"
 	}
-	return fmt.Sprintf("http://localhost:%d%s", s.port, s.path)
+	return "http://" + net.JoinHostPort(host, port) + path
 }

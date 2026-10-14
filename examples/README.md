@@ -5,7 +5,7 @@ implement the same UUID generation API with full observability, but use
 different architectural patterns for organizing telemetry code.
 
 | Example | Pattern | Best For |
-| --------- | --------- | ---------- |
+|---------|---------|----------|
 | [gingonic-simple](gingonic-simple/) | Embedded telemetry | Quick setup, smaller projects |
 | [gingonic-decorator](gingonic-decorator/) | Decorator chain | Separation of concerns, testability |
 
@@ -20,7 +20,7 @@ Both examples provide:
 
 ## Prerequisites
 
-- Go 1.27.1+
+- Go 1.27.2+
 - Docker and Docker Compose (for full observability stack)
 
 ## Running an Example
@@ -38,10 +38,13 @@ Or build first:
 
 ```bash
 make local
-.out/uuid_api
+.out/gingonic-simple  # or .out/gingonic-decorator
 ```
 
-Ports: 8080 (API), 9090 (Prometheus metrics).
+Ports: 8080 (API), 9090 (Prometheus metrics). `make run` sends traces to
+`http://localhost:4317` without TLS; set `OTEL_EXPORTER_OTLP_ENDPOINT` to use
+another collector. otelx reads that and the other standard `OTEL_*` variables
+directly.
 
 ### Full Observability Stack
 
@@ -187,7 +190,7 @@ Request --> Logging --> Metrics --> Tracing --> Core Handler --> Response
 ## Pattern Comparison
 
 | Aspect | Simple | Decorator |
-| -------- | -------- | ----------- |
+|--------|--------|-----------|
 | Code organization | Single file, interleaved | Separate concerns |
 | Setup complexity | Low | Higher |
 | Testing | Test all telemetry together | Test each concern independently |

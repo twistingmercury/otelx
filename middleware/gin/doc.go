@@ -12,15 +12,15 @@
 //
 //	import (
 //	    "github.com/gin-gonic/gin"
-//	    "github.com/twistingmercury/otelx"
-//	    ginmw "github.com/twistingmercury/otelx/middleware/gin"
+//	    "github.com/twistingmercury/otelx/v2"
+//	    ginmw "github.com/twistingmercury/otelx/middleware/gin/v2"
 //	)
 //
 //	func main() {
-//	    tel, err := otelx.Initialize(ctx,
-//	        otelx.WithService("my-service", "1.0.0", "production"),
-//	        otelx.WithTracing(),
-//	    )
+//	    tel, err := otelx.Initialize(ctx, otelx.Config{
+//	        ServiceName: "my-service",
+//	        Tracing:     true,
+//	    })
 //	    if err != nil {
 //	        log.Fatal(err)
 //	    }

@@ -2,7 +2,8 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/twistingmercury/otelx"
+	"github.com/twistingmercury/otelx/v2"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -16,7 +17,7 @@ type tracingHandler struct {
 // NewTracingHandler creates a new tracing decorator that wraps an inner Handler.
 func NewTracingHandler(tel *otelx.Telemetry, inner Handler) Handler {
 	return &tracingHandler{
-		tracer:       tel.Tracer("uuid-api"),
+		tracer:       otel.Tracer("uuid-api"),
 		innerHandler: inner,
 	}
 }

@@ -2,137 +2,104 @@ package otelx_test
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/twistingmercury/otelx"
-	"github.com/twistingmercury/otelx/internal/testutil"
+	"github.com/twistingmercury/otelx/v2"
+	"github.com/twistingmercury/otelx/v2/internal/testutil"
 )
 
-func TestMetricsServer_URL(t *testing.T) {
-	// Test nil server
-	var nilServer *otelx.MetricsServer
-	assert.Equal(t, "", nilServer.URL())
-	assert.Equal(t, 0, nilServer.Port())
-	assert.Equal(t, "", nilServer.Path())
+func initMetrics(t *testing.T, cfg otelx.Config) *otelx.Telemetry {
+	t.Helper()
+	cfg.ServiceName = "svc"
+	cfg.LogWriter = testutil.NopWriter{}
+	if cfg.MetricsAddr == "" {
+		cfg.MetricsAddr = "127.0.0.1:0"
+	}
+	tel, err := otelx.Initialize(context.Background(), cfg)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tel.Shutdown(context.Background()) })
+	return tel
 }
 
-func TestMetrics_Integration(t *testing.T) {
+func TestMetrics_ServesCounters(t *testing.T) {
 	ctx := context.Background()
-	port := testutil.GetFreePort(t)
+	tel := initMetrics(t, otelx.Config{})
 
-	tel, err := otelx.Initialize(ctx,
-		otelx.WithService("test-service", "1.0.0", "test"),
-		otelx.WithMetrics(port),
-		otelx.WithoutLogging(),
-	)
+	counter, err := tel.MeterProvider.Meter("test").Int64Counter("requests")
 	require.NoError(t, err)
-	require.NotNil(t, tel)
-	defer func() {
-		_ = tel.Shutdown(ctx)
-	}()
+	counter.Add(ctx, 3)
 
-	// Wait for server to start
-	metricsURL := tel.MetricsURL()
-	require.NotEmpty(t, metricsURL)
-
-	ok := testutil.WaitForServer(t, metricsURL, 5*time.Second)
-	require.True(t, ok, "metrics server did not start in time")
-
-	// Fetch metrics
-	resp, err := http.Get(metricsURL)
-	require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
-
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	body, status := testutil.FetchURL(t, tel.MetricsURL())
+	assert.Equal(t, http.StatusOK, status)
+	assert.Contains(t, body, "requests_total")
+	assert.Contains(t, body, `service_name="svc"`)
 }
 
 func TestMetrics_CustomPath(t *testing.T) {
-	ctx := context.Background()
-	port := testutil.GetFreePort(t)
+	tel := initMetrics(t, otelx.Config{MetricsPath: "/custom"})
+	require.Regexp(t, `^http://127\.0\.0\.1:\d+/custom$`, tel.MetricsURL())
 
-	tel, err := otelx.Initialize(ctx,
-		otelx.WithService("test-service", "1.0.0", "test"),
-		otelx.WithMetrics(port),
-		otelx.WithMetricsPath("/custom/metrics"),
-		otelx.WithoutLogging(),
-	)
-	require.NoError(t, err)
-	require.NotNil(t, tel)
-	defer func() {
-		_ = tel.Shutdown(ctx)
-	}()
-
-	// Wait for server to start
-	metricsURL := tel.MetricsURL()
-	require.Contains(t, metricsURL, "/custom/metrics")
-
-	ok := testutil.WaitForServer(t, metricsURL, 5*time.Second)
-	require.True(t, ok, "metrics server did not start in time")
-
-	// Fetch metrics
-	resp, err := http.Get(metricsURL)
-	require.NoError(t, err)
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-}
-
-func TestMetrics_Disabled(t *testing.T) {
-	ctx := context.Background()
-
-	tel, err := otelx.Initialize(ctx,
-		otelx.WithService("test-service", "1.0.0", "test"),
-		otelx.WithoutLogging(),
-		// No WithMetrics - metrics disabled
-	)
-	require.NoError(t, err)
-	require.NotNil(t, tel)
-	defer func() {
-		_ = tel.Shutdown(ctx)
-	}()
-
-	assert.Nil(t, tel.MeterProvider)
-	assert.Empty(t, tel.MetricsURL())
-}
-
-func TestMetrics_Counter(t *testing.T) {
-	ctx := context.Background()
-	port := testutil.GetFreePort(t)
-
-	tel, err := otelx.Initialize(ctx,
-		otelx.WithService("test-service", "1.0.0", "test"),
-		otelx.WithMetrics(port),
-		otelx.WithoutLogging(),
-	)
-	require.NoError(t, err)
-	require.NotNil(t, tel)
-	defer func() {
-		_ = tel.Shutdown(ctx)
-	}()
-
-	// Wait for server to start
-	ok := testutil.WaitForServer(t, tel.MetricsURL(), 5*time.Second)
-	require.True(t, ok, "metrics server did not start in time")
-
-	// Create and use a counter
-	require.NotNil(t, tel.MeterProvider)
-	meter := tel.MeterProvider.Meter("test")
-	counter, err := meter.Int64Counter("test_requests_total")
-	require.NoError(t, err)
-
-	counter.Add(ctx, 5)
-
-	// Give time for metrics to be collected
-	time.Sleep(100 * time.Millisecond)
-
-	// Fetch and verify metrics contain our counter
-	body, status := testutil.FetchURL(t, tel.MetricsURL())
+	_, status := testutil.FetchURL(t, tel.MetricsURL())
 	assert.Equal(t, http.StatusOK, status)
-	assert.Contains(t, body, "test_requests_total")
+}
+
+func TestMetrics_URLUsesLocalhostForWildcardAddress(t *testing.T) {
+	tel := initMetrics(t, otelx.Config{MetricsAddr: ":0"})
+	assert.Regexp(t, `^http://localhost:\d+/metrics$`, tel.MetricsURL())
+}
+
+func TestInitialize_MetricsPortInUse(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer func() { _ = ln.Close() }()
+
+	tel, err := otelx.Initialize(context.Background(), otelx.Config{
+		ServiceName: "svc",
+		LogWriter:   testutil.NopWriter{},
+		MetricsAddr: ln.Addr().String(),
+	})
+	require.Error(t, err, "Initialize must fail when the metrics port is taken")
+	assert.Nil(t, tel)
+}
+
+// Two Telemetry instances in one process must each serve their own metrics.
+func TestInitialize_TwiceServesSeparateMetrics(t *testing.T) {
+	ctx := context.Background()
+
+	init := func(counter string) *otelx.Telemetry {
+		tel := initMetrics(t, otelx.Config{})
+		c, err := tel.MeterProvider.Meter("test").Int64Counter(counter)
+		require.NoError(t, err)
+		c.Add(ctx, 1)
+		return tel
+	}
+	first := init("first_counter")
+	second := init("second_counter")
+
+	firstBody, _ := testutil.FetchURL(t, first.MetricsURL())
+	secondBody, _ := testutil.FetchURL(t, second.MetricsURL())
+
+	assert.Contains(t, firstBody, "first_counter")
+	assert.NotContains(t, firstBody, "second_counter")
+	assert.Contains(t, secondBody, "second_counter")
+	assert.NotContains(t, secondBody, "first_counter")
+	assert.Contains(t, firstBody, "go_goroutines", "Go runtime metrics should still be served")
+}
+
+func TestMetrics_StopsOnShutdown(t *testing.T) {
+	tel, err := otelx.Initialize(context.Background(), otelx.Config{
+		ServiceName: "svc",
+		LogWriter:   testutil.NopWriter{},
+		MetricsAddr: "127.0.0.1:0",
+	})
+	require.NoError(t, err)
+	url := tel.MetricsURL()
+	require.NoError(t, tel.Shutdown(context.Background()))
+
+	_, err = http.Get(url) //nolint:gosec // test URL
+	assert.Error(t, err)
 }
