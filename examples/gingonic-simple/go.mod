@@ -5,6 +5,7 @@ go 1.27.2
 require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
+	github.com/twistingmercury/otelx/middleware/gin/v2 v2.0.0
 	github.com/twistingmercury/otelx/v2 v2.0.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.64.0
 	go.opentelemetry.io/otel v1.45.0
@@ -69,3 +70,5 @@ require (
 )
 
 replace github.com/twistingmercury/otelx/v2 => ../../
+
+replace github.com/twistingmercury/otelx/middleware/gin/v2 => ../../middleware/gin

@@ -13,7 +13,7 @@
 //	import (
 //	    "github.com/gin-gonic/gin"
 //	    "github.com/twistingmercury/otelx/v2"
-//	    ginmw "github.com/twistingmercury/otelx/v2/middleware/gin"
+//	    ginmw "github.com/twistingmercury/otelx/middleware/gin/v2"
 //	)
 //
 //	func main() {
