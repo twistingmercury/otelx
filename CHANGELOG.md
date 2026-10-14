@@ -33,6 +33,11 @@ The module path is now `github.com/twistingmercury/otelx/v2`, and
 | `NewDefaultConfig`, `Config.Validate`, `Config.Clone` | Removed |
 | `NewResource`, `MetricsServer`, `LogLevel`, `Default*` constants | Unexported or removed |
 
+- The gin middleware is now its own module,
+  `github.com/twistingmercury/otelx/middleware/gin/v2`, so importing otelx no
+  longer pulls in gin, sonic, quic-go or mongo-driver
+- The gin request log no longer includes the raw query string, which could
+  carry tokens or personal data
 - The default OTLP exporter no longer overrides `OTEL_EXPORTER_OTLP_*`, and
   the sampler no longer overrides `OTEL_TRACES_SAMPLER`
 - `MetricsAddr` may use port 0; `MetricsURL` reports the bound port

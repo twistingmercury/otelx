@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/twistingmercury/otelx/v2"
-	otelxgin "github.com/twistingmercury/otelx/v2/middleware/gin"
+	otelxgin "github.com/twistingmercury/otelx/middleware/gin/v2"
 	"github.com/twistingmercury/otelx_examples/gingonic/decorator/internal/handlers"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
