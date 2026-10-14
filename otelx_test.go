@@ -3,6 +3,7 @@ package otelx_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/twistingmercury/otelx"
 	"github.com/twistingmercury/otelx/internal/testutil"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
@@ -356,4 +358,26 @@ func TestTelemetry_Meter_Disabled(t *testing.T) {
 	// Should return noop meter from global provider
 	meter := tel.Meter("test")
 	assert.NotNil(t, meter)
+}
+
+type failingExporter struct{ err error }
+
+func (failingExporter) ExportSpans(context.Context, []sdktrace.ReadOnlySpan) error { return nil }
+func (e failingExporter) Shutdown(context.Context) error                           { return e.err }
+
+func TestTelemetry_ShutdownWrapsErrors(t *testing.T) {
+	ctx := context.Background()
+	errExporter := errors.New("exporter shutdown failed")
+
+	tel, err := otelx.Initialize(ctx,
+		otelx.WithService("test-service", "1.0.0", "test"),
+		otelx.WithTracing(),
+		otelx.WithTraceExporter(failingExporter{err: errExporter}),
+		otelx.WithoutLogging(),
+	)
+	require.NoError(t, err)
+
+	err = tel.Shutdown(ctx)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, errExporter, "Shutdown must keep the underlying error for errors.Is")
 }

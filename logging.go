@@ -22,11 +22,9 @@ func setupLogging(cfg *Config) zerolog.Logger {
 		return zerolog.Nop()
 	}
 
-	// Set global zerolog level
-	zerolog.SetGlobalLevel(cfg.LogLevel)
-
-	// Create base logger with service context
-	logger := zerolog.New(output).With().
+	// Set the level on this logger only. zerolog.SetGlobalLevel would also
+	// change every other zerolog logger in the process.
+	logger := zerolog.New(output).Level(cfg.LogLevel).With().
 		Timestamp().
 		Str("service", cfg.ServiceName).
 		Str("version", cfg.ServiceVersion).

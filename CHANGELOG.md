@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `Config.TraceExporter` and `WithTraceExporter` now take an
+  `sdktrace.SpanExporter` instead of `interface{}`, so a wrong type fails at
+  compile time instead of in `Initialize`
+- The resource now uses `deployment.environment.name` instead of the
+  deprecated `deployment.environment`
+- The resource now reports the OpenTelemetry Go SDK's real `telemetry.sdk.*`
+  values instead of a hardcoded `otelx` / `1.0.0`
+- `OTEL_RESOURCE_ATTRIBUTES` and `OTEL_SERVICE_NAME` are now read and override
+  the values passed to `WithService`
+- Each `Telemetry` now serves metrics from its own Prometheus registry (with Go
+  runtime and process collectors) instead of the global default registry
+
+### Fixed
+
+- The trace sampler now honors the parent span's sampling decision
+  (`ParentBased(TraceIDRatioBased(rate))`), so a service no longer breaks up
+  traces that an upstream service sampled
+- `Initialize` now returns an error when the metrics port is already in use
+  instead of printing it from a background goroutine
+- Calling `Initialize` twice no longer breaks the `/metrics` endpoint with
+  duplicate `target_info` errors
+- `Initialize` no longer calls `zerolog.SetGlobalLevel`, which changed the level
+  of every zerolog logger in the process
+- `Shutdown` now joins errors with `errors.Join`, so `errors.Is` and `errors.As`
+  work on the result
+
 ## [1.0.1] - 2026-08-21
 
 ### Added

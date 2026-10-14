@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/rs/zerolog"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 // Option is a function that configures otelx initialization.
@@ -89,8 +90,7 @@ func WithTraceSampleRate(rate float64) Option {
 
 // WithTraceExporter sets a custom trace exporter.
 // When set, the default OTLP exporter will not be created.
-// The exporter must implement sdktrace.SpanExporter.
-func WithTraceExporter(exporter interface{}) Option {
+func WithTraceExporter(exporter sdktrace.SpanExporter) Option {
 	return func(c *Config) error {
 		c.TraceExporter = exporter
 		return nil

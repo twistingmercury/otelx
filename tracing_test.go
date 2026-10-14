@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestTracing_Disabled(t *testing.T) {
@@ -221,16 +222,35 @@ func (m *MockSpanExporter) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func TestTracing_InvalidExporterType(t *testing.T) {
+// A sampled remote parent must keep its child sampled even when the local
+// sample rate would drop a root span.
+func TestTracing_RespectsParentSamplingDecision(t *testing.T) {
 	ctx := context.Background()
+	exporter := tracetest.NewInMemoryExporter()
 
-	// Pass something that's not a SpanExporter
-	_, err := otelx.Initialize(ctx,
+	tel, err := otelx.Initialize(ctx,
 		otelx.WithService("test-service", "1.0.0", "test"),
 		otelx.WithoutLogging(),
 		otelx.WithTracing(),
-		otelx.WithTraceExporter("not an exporter"),
+		otelx.WithTraceExporter(exporter),
+		otelx.WithTraceSampleRate(0.0),
 	)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "SpanExporter")
+	require.NoError(t, err)
+	defer func() { _ = tel.Shutdown(ctx) }()
+
+	sampledParent := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    trace.TraceID{0x01},
+		SpanID:     trace.SpanID{0x01},
+		TraceFlags: trace.FlagsSampled,
+		Remote:     true,
+	})
+	parentCtx := trace.ContextWithRemoteSpanContext(ctx, sampledParent)
+
+	_, child := tel.Tracer("test").Start(parentCtx, "child")
+	assert.True(t, child.SpanContext().IsSampled(), "child of a sampled parent must be sampled")
+	child.End()
+
+	_, root := tel.Tracer("test").Start(ctx, "root")
+	assert.False(t, root.SpanContext().IsSampled(), "root span must follow the 0.0 sample rate")
+	root.End()
 }

@@ -2,6 +2,7 @@ package otelx
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/rs/zerolog"
@@ -137,10 +138,7 @@ func (t *Telemetry) Shutdown(ctx context.Context) error {
 		}
 	}
 
-	if len(errs) > 0 {
-		return fmt.Errorf("shutdown errors: %v", errs)
-	}
-	return nil
+	return errors.Join(errs...)
 }
 
 // MetricsURL returns the URL where metrics are being served.

@@ -22,13 +22,8 @@ func setupTracing(ctx context.Context, cfg *Config, res *resource.Resource) (*sd
 	var exporter sdktrace.SpanExporter
 	var err error
 
-	// Check if a custom exporter was provided
 	if cfg.TraceExporter != nil {
-		var ok bool
-		exporter, ok = cfg.TraceExporter.(sdktrace.SpanExporter)
-		if !ok {
-			return nil, fmt.Errorf("trace exporter must implement sdktrace.SpanExporter")
-		}
+		exporter = cfg.TraceExporter
 	} else {
 		// Create OTLP gRPC exporter
 		opts := []otlptracegrpc.Option{
@@ -46,16 +41,9 @@ func setupTracing(ctx context.Context, cfg *Config, res *resource.Resource) (*sd
 		}
 	}
 
-	// Configure sampler based on sample rate
-	var sampler sdktrace.Sampler
-	switch cfg.TraceSampleRate {
-	case 0.0:
-		sampler = sdktrace.NeverSample()
-	case 1.0:
-		sampler = sdktrace.AlwaysSample()
-	default:
-		sampler = sdktrace.TraceIDRatioBased(cfg.TraceSampleRate)
-	}
+	// The sample rate applies to root spans only; child spans follow their
+	// parent's sampling decision so distributed traces stay complete.
+	sampler := sdktrace.ParentBased(sdktrace.TraceIDRatioBased(cfg.TraceSampleRate))
 
 	// Create TracerProvider
 	tp := sdktrace.NewTracerProvider(
