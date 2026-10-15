@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [src/v2.0.0] - 2026-10-15
+
+First release under the new module paths. The API is the same as the old
+`v2.0.0`; only the import paths changed.
+
 ### Breaking
 
 The library code moved under `src/`, so the module paths now include it:
@@ -146,7 +151,8 @@ middleware moved to its own module,
 
 <!-- markdownlint-enable MD024 -->
 
-[Unreleased]: https://github.com/twistingmercury/otelx/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/twistingmercury/otelx/compare/src/v2.0.0...HEAD
+[src/v2.0.0]: https://github.com/twistingmercury/otelx/compare/v2.0.0...src/v2.0.0
 [2.0.0]: https://github.com/twistingmercury/otelx/compare/v1.0.2...v2.0.0
 [1.0.2]: https://github.com/twistingmercury/otelx/releases/tag/v1.0.2
 [1.0.1]: https://github.com/twistingmercury/otelx/releases/tag/v1.0.1
