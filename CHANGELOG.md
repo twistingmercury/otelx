@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   requirement. The SDK ignores a blank value, so `Initialize` used to succeed
   and run with no `service.name`; it now returns the usual `ServiceName is
   required` error (#20)
+- `Initialize` returns an error instead of panicking when `MetricsPath` does
+  not start with `/` and metrics are enabled (#19)
 
 ## [src/v2.0.0] - 2026-10-15
 
