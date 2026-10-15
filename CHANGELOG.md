@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `Initialize` returns an error instead of panicking when `MetricsPath` does
+  not start with `/` and metrics are enabled (#19)
+
 ## [src/v2.0.0] - 2026-10-15
 
 First release under the new module paths. The API is the same as the old

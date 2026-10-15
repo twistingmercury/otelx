@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/rs/zerolog"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -38,7 +39,8 @@ type Config struct {
 	// such as ":9090". Metrics are disabled when it is empty.
 	MetricsAddr string
 
-	// MetricsPath is the HTTP path metrics are served on. The default is "/metrics".
+	// MetricsPath is the HTTP path metrics are served on. It must start with "/"
+	// when MetricsAddr is set. The default is "/metrics".
 	MetricsPath string
 
 	// Tracing enables the trace provider.
@@ -73,6 +75,11 @@ func (c Config) withDefaults() (Config, error) {
 
 	if c.MetricsPath == "" {
 		c.MetricsPath = defaultMetricsPath
+	}
+
+	// net/http panics on a pattern with no leading slash.
+	if c.MetricsAddr != "" && !strings.HasPrefix(c.MetricsPath, "/") {
+		errs = append(errs, fmt.Errorf("invalid MetricsPath %q: must start with \"/\"", c.MetricsPath))
 	}
 
 	return c, errors.Join(errs...)
