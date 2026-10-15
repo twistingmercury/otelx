@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/rs/zerolog"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -57,7 +58,9 @@ type Config struct {
 func (c Config) withDefaults() (Config, error) {
 	var errs []error
 
-	if c.ServiceName == "" && os.Getenv("OTEL_SERVICE_NAME") == "" {
+	// The SDK trims OTEL_SERVICE_NAME, so a blank value sets no name.
+	envName := strings.TrimSpace(os.Getenv("OTEL_SERVICE_NAME"))
+	if c.ServiceName == "" && envName == "" {
 		errs = append(errs, errors.New("ServiceName is required unless OTEL_SERVICE_NAME is set"))
 	}
 

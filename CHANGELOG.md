@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A whitespace-only `OTEL_SERVICE_NAME` no longer satisfies the service name
+  requirement. The SDK ignores a blank value, so `Initialize` used to succeed
+  and run with no `service.name`; it now returns the usual `ServiceName is
+  required` error (#20)
+
 ## [src/v2.0.0] - 2026-10-15
 
 First release under the new module paths. The API is the same as the old
