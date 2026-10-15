@@ -1,3 +1,6 @@
+ROOT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+SRC_DIR := $(ROOT_DIR)src
+
 DOCKER ?= docker
 MODULES := src src/middleware/gin
 VERIFY_IMAGE ?= otelx-ci:local
@@ -9,9 +12,11 @@ default: help
 build: ## Build and validate the project in Docker
 	IS_LOCAL=1 build/build.sh
 
-analyze: ## Run analysis in Docker
-	test -z "$$(goimports -l src)" || { goimports -l src; echo 'goimports: files need formatting'; exit 1; }
-	for m in $(MODULES); do (cd $$m && golangci-lint run && govulncheck ./... && gosec -quiet -exclude-dir=tests ./...) || exit 1; done
+analyze: ## Run formatters, linters, and security scanners
+	cd "$(SRC_DIR)" && goimports -w .
+	cd "$(SRC_DIR)" && golangci-lint run
+	cd "$(SRC_DIR)" && govulncheck ./...
+	cd "$(SRC_DIR)" && gosec -quiet -exclude-dir=tests ./...
 
 unit-test: ## Run unit tests in Docker
 	for m in $(MODULES); do (cd $$m && go vet ./... && CGO_ENABLED=1 go test -race ./...) || exit 1; done

@@ -17,14 +17,18 @@ WORKDIR /workspace
 
 COPY . .
 
+WORKDIR /workspace/src
+
+## Run linters, formatters, security scanners, etc
 RUN goimports -w .
+RUN golangci-lint run
+RUN govulncheck ./...
+RUN gosec ./...
+
+WORKDIR /workspace
 
 # The library and the gin middleware are separate modules; check both.
 ARG MODULES="src src/middleware/gin"
-
-RUN for m in $MODULES; do (cd "$m" && golangci-lint run) || exit 1; done
-RUN for m in $MODULES; do (cd "$m" && govulncheck ./...) || exit 1; done
-RUN for m in $MODULES; do (cd "$m" && gosec -quiet -exclude-dir=tests ./...) || exit 1; done
 
 RUN for m in $MODULES; do (cd "$m" && go vet ./...) || exit 1; done
 RUN for m in $MODULES; do (cd "$m" && CGO_ENABLED=1 go test -race ./...) || exit 1; done
