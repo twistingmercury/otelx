@@ -22,14 +22,14 @@ flowchart LR
 ## Install
 
 ```bash
-go get github.com/twistingmercury/otelx/v2
+go get github.com/twistingmercury/otelx/src/v2
 ```
 
 The optional Gin middleware is a separate module, so services that don't use
 Gin don't download it:
 
 ```bash
-go get github.com/twistingmercury/otelx/middleware/gin/v2
+go get github.com/twistingmercury/otelx/src/middleware/gin/v2
 ```
 
 ## Usage
@@ -41,7 +41,7 @@ import (
     "context"
     "log"
 
-    "github.com/twistingmercury/otelx/v2"
+    otelx "github.com/twistingmercury/otelx/src/v2"
     "go.opentelemetry.io/otel"
 )
 
@@ -125,7 +125,7 @@ when `MetricsAddr` uses port 0.
 ### Gin middleware
 
 ```go
-import ginmw "github.com/twistingmercury/otelx/middleware/gin/v2"
+import ginmw "github.com/twistingmercury/otelx/src/middleware/gin/v2"
 
 r := gin.New()
 r.Use(ginmw.LoggingMiddleware(tel, ginmw.WithSkipPaths("/health")))
@@ -178,7 +178,7 @@ at the most recent call's providers.
 
 ## Upgrading from v1
 
-The module path changed to `github.com/twistingmercury/otelx/v2` and
+The module path changed to `github.com/twistingmercury/otelx/src/v2` and
 `Initialize` takes a `Config` instead of options. [CHANGELOG.md](CHANGELOG.md)
 maps each v1 option to its replacement.
 
@@ -190,8 +190,8 @@ make analyze     # goimports, golangci-lint, govulncheck and gosec
 make build       # the full CI check inside Docker
 ```
 
-The repository holds two modules: the library at the root and the Gin
-middleware in `middleware/gin`. `go.work` ties them and the examples together
+The repository holds two modules, both under `src/`: the library and the Gin
+middleware in `src/middleware/gin`. `src/go.work` ties them and the examples together
 for local work, and the Makefile and Docker build run each check in both
 modules.
 
@@ -201,9 +201,9 @@ Tag the library first, then the middleware, because the middleware requires
 the library version:
 
 ```bash
-git tag v2.0.0
-git tag middleware/gin/v2.0.0
-git push origin v2.0.0 middleware/gin/v2.0.0
+git tag src/v2.0.0
+git tag src/middleware/gin/v2.0.0
+git push origin src/v2.0.0 src/middleware/gin/v2.0.0
 ```
 
 ## License

@@ -18,9 +18,7 @@ run: ## Run locally for dev purposes
 	go run cmd/main/main.go
 
 build: ## Build Docker image
-	./build/build.sh
-	docker system prune -f
+	docker compose build
 
 clean: ## Remove built images and containers
-	docker compose down --rmi local 2>/dev/null || true
-	docker rmi uuid-api:latest 2>/dev/null || true
+	docker compose down --rmi local

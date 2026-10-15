@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+The library code moved under `src/`, so the module paths now include it:
+
+| Before | After |
+| --- | --- |
+| `github.com/twistingmercury/otelx/v2` | `github.com/twistingmercury/otelx/src/v2` |
+| `github.com/twistingmercury/otelx/middleware/gin/v2` | `github.com/twistingmercury/otelx/src/middleware/gin/v2` |
+
+Update your imports and `go.mod` to the new paths. Releases are tagged
+`src/v*` and `src/middleware/gin/v*`. The old `v2.0.0` tags still resolve under
+the old paths but will not get further updates.
+
 ## [2.0.0] - 2026-10-14
 
 ### Breaking

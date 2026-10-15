@@ -4,6 +4,8 @@
 go.work.sum
 _*
 .claude/settings.local.json
+.claude/commands/
+.claude/plans/
 
 # Mac OS
 # General
