@@ -1,4 +1,4 @@
-FROM ghcr.io/twistingmercury/golang-tooling:go1.27.2 AS verify
+FROM ghcr.io/twistingmercury/golang-tooling:go1.27.3 AS verify
 
 RUN apk add --no-cache gcc musl-dev
 
