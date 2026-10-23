@@ -20,6 +20,17 @@ func TestInitialize_RequiresServiceName(t *testing.T) {
 	assert.Nil(t, tel)
 }
 
+func TestInitialize_MetricsPathWithoutSlash(t *testing.T) {
+	tel, err := otelx.Initialize(context.Background(), otelx.Config{
+		ServiceName: "svc",
+		LogWriter:   testutil.NopWriter{},
+		MetricsAddr: ":0",
+		MetricsPath: "metrics",
+	})
+	require.ErrorContains(t, err, "MetricsPath")
+	assert.Nil(t, tel)
+}
+
 func TestInitialize_LoggingOnlyByDefault(t *testing.T) {
 	ctx := context.Background()
 	tel, err := otelx.Initialize(ctx, otelx.Config{ServiceName: "svc", LogWriter: testutil.NopWriter{}})

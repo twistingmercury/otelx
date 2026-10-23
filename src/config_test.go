@@ -45,6 +45,17 @@ func TestConfig_BlankServiceNameEnvWithConfigName(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// net/http panics on a pattern with no leading slash, so it has to be an error.
+func TestConfig_MetricsPathNeedsLeadingSlash(t *testing.T) {
+	_, err := Config{ServiceName: "svc", MetricsAddr: ":0", MetricsPath: "metrics"}.withDefaults()
+	require.ErrorContains(t, err, "MetricsPath")
+}
+
+func TestConfig_MetricsPathIgnoredWhenMetricsOff(t *testing.T) {
+	_, err := Config{ServiceName: "svc", MetricsPath: "metrics"}.withDefaults()
+	require.NoError(t, err)
+}
+
 func TestConfig_InvalidLogLevel(t *testing.T) {
 	_, err := Config{ServiceName: "svc", LogLevel: "loud"}.withDefaults()
 	require.ErrorContains(t, err, "LogLevel")
