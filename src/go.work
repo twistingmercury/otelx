@@ -2,7 +2,7 @@ go 1.27.2
 
 use (
 	.
-	./middleware/gin
-	../examples/gingonic-simple
 	../examples/gingonic-decorator
+	../examples/gingonic-simple
+	./middleware/gin
 )
